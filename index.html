@@ -1,0 +1,18 @@
+<html>
+<body>
+<input type="file" id="log_file">
+<script src="logcruncher.js"></script>
+<script>
+function handleLog(evt) {
+  var file = evt.target.files[0];
+  var reader = new FileReader();
+  reader.onload = function(progressEvent) {
+    var JSONArray = logCruncher(this.result);
+    console.log(JSONArray);
+  };
+  reader.readAsText(file, "UTF-8");
+}
+document.getElementById("log_file").addEventListener("change", handleLog, false);
+</script>
+</body>
+</html>
