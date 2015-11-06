@@ -1,0 +1,24 @@
+<html>
+<body>
+<input type="file" id="log_file">
+<script>
+var a;
+function handleLog(evt) {
+	var file = evt.target.files[0];
+	var reader = new FileReader();
+	reader.onload = function(progressEvent) {
+		console.log(a);
+		console.log(this.result);
+		var lines = this.result.split('\n');
+		for(var line = 0; line < lines.length; line++) {
+			if (line==0)
+				a=lines[line];
+			console.log(lines[line]);
+		}
+	};
+	reader.readAsText(file);
+}
+document.getElementById("log_file").addEventListener("change",handleLog,false);
+</script>
+</body>
+</html>
