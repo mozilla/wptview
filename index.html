@@ -7,7 +7,7 @@ function handleLog(evt) {
   var file = evt.target.files[0];
   var reader = new FileReader();
   reader.onload = function(progressEvent) {
-    var JSONArray = logCruncher(this.result);
+    var JSONArray = logCruncher(this.result, testsFilter);
     console.log(JSONArray);
   };
   reader.readAsText(file, "UTF-8");
