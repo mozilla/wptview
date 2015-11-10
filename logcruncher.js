@@ -14,7 +14,12 @@ function logCruncher(rawtext, filter) {
 }
 
 function testsFilter(parsedLine) {
-  var pattr = /^test/;
-  var result = pattr.test(parsedLine.action);
-  return result;
+  var pattr = /^test_/;
+  var pattr2 = /^(?:error)|(?:critical)/i;
+  if (pattr.test(parsedLine.action) || (parsedLine.action=="log" && pattr2.test(parsedLine.level))) {
+    return true;
+  }
+  else {
+    return false;
+  }
 }
