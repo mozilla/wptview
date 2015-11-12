@@ -1,6 +1,8 @@
 <html>
 <body>
 <input type="file" id="log_file">
+<script src="lf_scripts/lovefield.js"></script>
+<script src="LovefieldService.js"></script>
 <script src="logcruncher.js"></script>
 <script>
 function handleLog(evt) {
@@ -9,6 +11,12 @@ function handleLog(evt) {
   reader.onload = function(progressEvent) {
     var JSONArray = logCruncher(this.result, testsFilter);
     console.log(JSONArray);
+    var lovefield = new LovefieldService();
+    lovefield.getDbConnection().then( function(db) {
+      lovefield.insertData(JSONArray).then(function() {
+
+      });
+    });
   };
   reader.readAsText(file, "UTF-8");
 }
