@@ -1,7 +1,7 @@
 var LovefieldService = function() {
   // Following member variables are initialized within getDbConnection().
   this.db_ = null;
-  this.testStart = null;
+  this.tests = null;
 };
 
 /**
@@ -10,7 +10,7 @@ var LovefieldService = function() {
  * @private
  */
 LovefieldService.prototype.onConnected_ = function() {
-  this.testStart = this.db_.getSchema().table('test_start');
+  this.tests = this.db_.getSchema().table('tests');
 };
 
 
@@ -22,7 +22,6 @@ LovefieldService.prototype.getDbConnection = function() {
   if (this.db_ != null) {
     return this.db_;
   }
-
   var connectOptions = {storeType: lf.schema.DataStoreType.INDEXED_DB};
   return this.buildSchema_().connect(connectOptions).then(
       function(db) {
@@ -40,7 +39,7 @@ LovefieldService.prototype.getDbConnection = function() {
  */
 LovefieldService.prototype.buildSchema_ = function() {
   var schemaBuilder = lf.schema.create('wptview', 1);
-  schemaBuilder.createTable('test_start').
+  schemaBuilder.createTable('tests').
       addColumn('id', lf.Type.INTEGER).
       addColumn('test_id', lf.Type.INTEGER).
       addPrimaryKey(['id'],true);
@@ -53,19 +52,19 @@ var testLogsRaw;
 
 
 LovefieldService.prototype.insertData = function(testLogsRaw) {
-  var testStartRows = [];
-  var testStart = this.testStart;
+  var testRows = [];
+  var tests = this.tests;
   testLogsRaw.forEach(function(testLog) {
-    if (testLog.action=="test_start") {
-      var row = testStart.createRow({
+    if (testLog.action == "test_start") {
+      var row = tests.createRow({
         'test_id': testLog.test
       });
-      testStartRows.push(row);  
+      testRows.push(row);
     }
   });
   var q1 = this.db_.
       insert().
-      into(this.testStart).
-      values(testStartRows);
+      into(this.tests).
+      values(testRows);
   return q1.exec();
 };
