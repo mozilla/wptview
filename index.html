@@ -14,7 +14,7 @@ function handleLog(evt) {
     var lovefield = new LovefieldService();
     lovefield.getDbConnection().then( function(db) {
       lovefield.insertData(JSONArray).then(function() {
-
+        console.log("Data successfully added!");
       });
     });
   };
