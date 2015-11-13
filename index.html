@@ -13,8 +13,11 @@ function handleLog(evt) {
     console.log(JSONArray);
     var lovefield = new LovefieldService();
     lovefield.getDbConnection().then( function(db) {
-      lovefield.insertData(JSONArray).then(function() {
-
+      lovefield.insertTests(JSONArray).then(function(results) {
+        console.log("Tests successfully added!");
+        lovefield.insertTestResults(JSONArray, results).then(function() {
+          console.log("Test results successfully added!");
+        });
       });
     });
   };
