@@ -13,8 +13,9 @@ function handleLog(evt) {
     console.log(JSONArray);
     var lovefield = new LovefieldService();
     lovefield.getDbConnection().then( function(db) {
-      lovefield.insertData(JSONArray).then(function() {
-        console.log("Data successfully added!");
+      lovefield.insertTests(JSONArray).then(function() {
+        console.log("Tests successfully added!");
+        lovefield.insertTestResults(JSONArray);
       });
     });
   };

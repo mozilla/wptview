@@ -43,15 +43,14 @@ LovefieldService.prototype.buildSchema_ = function() {
   var schemaBuilder = lf.schema.create('wptview', 1);
   schemaBuilder.createTable('tests').
       addColumn('id', lf.Type.INTEGER).
-      addColumn('test_file', lf.Type.STRING).
-      addPrimaryKey(['id'],true);
+      addColumn('test', lf.Type.STRING).
+      addPrimaryKey(['id'], true);
   schemaBuilder.createTable('test_results').
       addColumn('result_id', lf.Type.INTEGER).
       addColumn('status', lf.Type.STRING).
       addColumn('message', lf.Type.STRING).
-      addColumn('test_file', lf.Type.STRING).
       addColumn('test_id', lf.Type.INTEGER).
-      addPrimaryKey(['result_id'],true).
+      addPrimaryKey(['result_id'], true).
       addForeignKey('fk_test_id', {
         local: 'test_id',
         ref: 'tests.id'
@@ -64,38 +63,68 @@ LovefieldService.prototype.buildSchema_ = function() {
 var testLogsRaw;
 
 
-LovefieldService.prototype.insertData = function(testLogsRaw) {
+LovefieldService.prototype.insertTests = function(testLogsRaw) {
   var testRows = [];
-  var testResultsRows = [];
   var tests = this.tests;
-  var test_results = this.test_results;
-  var testId = 0;
   testLogsRaw.forEach(function(testLog) {
     if (testLog.action == "test_start") {
       var row = tests.createRow({
-        'test_file': testLog.test
+        'test': testLog.test
       });
       testRows.push(row);
-      testId = testId + 1;
-    }
-    else if (testLog.action == "test_end") {
-      var row = test_results.createRow({
-        'status': testLog.status,
-        'message': testLog.message,
-        'test_file': testLog.test,
-        'test_id': testId
-      });
-      testResultsRows.push(row);
     }
   });
   var q1 = this.db_.
       insert().
-      into(this.tests).
+      into(tests).
       values(testRows);
-  var q2 = this.db_.
-      insert().
-      into(this.test_results).
-      values(testResultsRows);
-  var tx = this.db_.createTransaction();        
-  return tx.exec([q1, q2]);
+  return q1.exec();
 };
+
+LovefieldService.prototype.getTestId = function(query_test) {
+  var tests = this.tests;
+  return this.db_.
+      select(tests.id).
+      from(tests).
+      where(tests.test.eq(query_test)).
+      exec();
+}
+
+LovefieldService.prototype.insertTestResults = function(testLogsRaw) {
+  var testResultsRows = [];
+  var test_results = this.test_results;
+  var getTestId = this.getTestId.bind(this);
+  var insertQueryTestResults = this.insertQueryTestResults.bind(this);
+  var selectPromises = [];
+  testLogsRaw.forEach(function(testLog) {
+    if (testLog.action == "test_end") {
+      var p1 = getTestId(testLog.test);
+      selectPromises.push(p1);
+      p1.then(function(results) {
+        if (results.length>0) {
+          var row = test_results.createRow({
+            'status': testLog.status,
+            'message': testLog.message,
+            'test_id': results[0].id
+          });
+          testResultsRows.push(row);  
+        }
+      });
+    }
+  });
+  Promise.all(selectPromises).then(function() {
+    console.log(testResultsRows);
+    insertQueryTestResults(testResultsRows).then(function() {
+        console.log("Successfully inserted all results!")
+      });
+    }); 
+}
+
+LovefieldService.prototype.insertQueryTestResults = function(testResultsRows) {
+  var test_results = this.test_results;
+  var q1 = this.db_.
+      insert().
+      into(test_results).
+      values(testResultsRows);
+  return q1.exec();
+}
