@@ -81,47 +81,25 @@ LovefieldService.prototype.insertTests = function(testLogsRaw) {
   return q1.exec();
 };
 
-LovefieldService.prototype.getTestId = function(query_test) {
-  var tests = this.tests;
-  return this.db_.
-      select(tests.id).
-      from(tests).
-      where(tests.test.eq(query_test)).
-      exec();
-}
-
-LovefieldService.prototype.insertTestResults = function(testLogsRaw) {
+LovefieldService.prototype.insertTestResults = function(testLogsRaw, tests) {
+  // Let's first create a test to id mapping
+  testIds = {};
+  tests.forEach(function(test) {
+    testIds[test.test] = test.id;
+  });
   var testResultsRows = [];
   var test_results = this.test_results;
-  var getTestId = this.getTestId.bind(this);
-  var insertQueryTestResults = this.insertQueryTestResults.bind(this);
-  var selectPromises = [];
   testLogsRaw.forEach(function(testLog) {
     if (testLog.action == "test_end") {
-      var p1 = getTestId(testLog.test);
-      selectPromises.push(p1);
-      p1.then(function(results) {
-        if (results.length>0) {
-          var row = test_results.createRow({
-            'status': testLog.status,
-            'message': testLog.message,
-            'test_id': results[0].id
-          });
-          testResultsRows.push(row);  
-        }
+      var resultId = testIds[testLog.test];
+      var row = test_results.createRow({
+        'status': testLog.status,
+        'message': testLog.message,
+        'test_id': resultId
       });
+      testResultsRows.push(row);  
     }
   });
-  Promise.all(selectPromises).then(function() {
-    console.log(testResultsRows);
-    insertQueryTestResults(testResultsRows).then(function() {
-        console.log("Successfully inserted all results!")
-      });
-    }); 
-}
-
-LovefieldService.prototype.insertQueryTestResults = function(testResultsRows) {
-  var test_results = this.test_results;
   var q1 = this.db_.
       insert().
       into(test_results).
