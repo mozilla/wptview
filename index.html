@@ -1,29 +1,68 @@
 <html>
 <body>
-<input type="file" id="log_file">
+
+<div ng-app="wptview" ng-controller="wptviewController">
+  <input type="file" id="log_file" custom-on-change="uploadFile">
+  <br>
+  <button ng-click="fillTable()">Generate!</button>
+  <table ng-table="resultsTable" border="1">
+    <tr>
+      <td>Test File</td>
+      <td>Result</td>
+      <td>Error Message</td>
+    </tr>
+    <tr ng-repeat="result in results">
+      <td>{{ result.test }}</td>
+      <td>{{ result.status }}</td>
+      <td>{{ result.message }}</td>
+    </tr>
+  </table>
+</div>
 <script src="lf_scripts/lovefield.js"></script>
 <script src="LovefieldService.js"></script>
 <script src="logcruncher.js"></script>
+<script src="angular.min.js"></script>
 <script>
-function handleLog(evt) {
-  var file = evt.target.files[0];
-  var reader = new FileReader();
-  reader.onload = function(progressEvent) {
-    var JSONArray = logCruncher(this.result, testsFilter);
-    console.log(JSONArray);
-    var lovefield = new LovefieldService();
-    lovefield.getDbConnection().then( function(db) {
-      lovefield.insertTests(JSONArray).then(function(results) {
-        console.log("Tests successfully added!");
-        lovefield.insertTestResults(JSONArray, results).then(function() {
-          console.log("Test results successfully added!");
+var app = angular.module('wptview', []);
+
+app.directive('customOnChange', function() {
+  return {
+    restrict: 'A',
+    link: function (scope, element, attrs) {
+      var onChangeHandler = scope.$eval(attrs.customOnChange);
+      element.bind('change', onChangeHandler);
+    }
+  };
+});
+
+app.controller('wptviewController', function($scope) {
+  var lovefield = new LovefieldService();
+  $scope.results = {};
+  $scope.uploadFile = function (evt) {
+    var file = evt.target.files[0];
+    var reader = new FileReader();
+    reader.onload = function(progressEvent) {
+      var JSONArray = logCruncher(this.result, testsFilter);
+      console.log(JSONArray);
+      lovefield.getDbConnection().then( function(db) {
+        lovefield.insertTests(JSONArray).then(function(results) {
+          console.log("Tests successfully added!");
+          lovefield.insertTestResults(JSONArray, results).then(function() {
+            console.log("Test results successfully added!");
+          });
         });
       });
+    };
+    reader.readAsText(file, "UTF-8");
+  }
+  $scope.fillTable = function() {
+    lovefield.selectNTests().then(function(results) {
+      console.log(results);
+      $scope.results = results;
+      $scope.$apply();
     });
-  };
-  reader.readAsText(file, "UTF-8");
-}
-document.getElementById("log_file").addEventListener("change", handleLog, false);
+  }
+});
 </script>
 </body>
 </html>
