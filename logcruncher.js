@@ -1,7 +1,6 @@
 function logCruncher(rawtext, filter) {
-  var JSONArray = [];
-  var deferred = Promise.defer();
-  setTimeout(function() {
+  return new Promise(function (resolve, reject) {
+    var JSONArray = [];
     var lines = rawtext.split('\n');
     for (var i=0; i<lines.length; i++) {
       if (lines[i]=="") {
@@ -12,9 +11,8 @@ function logCruncher(rawtext, filter) {
         JSONArray.push(json);
       }
     }
-    deferred.resolve(JSONArray);
-  },0);
-  return deferred.promise;
+    resolve(JSONArray);
+  });
 }
 
 function testsFilter(parsedLine) {
@@ -24,11 +22,12 @@ function testsFilter(parsedLine) {
 }
 
 function readFile(file) {
-  var reader = new FileReader();
-  var deferred = Promise.defer();
-  reader.onload = function(progressEvent) {
-    deferred.resolve(this.result);
-  };
-  reader.readAsText(file, "UTF-8");
-  return deferred.promise;
+  return new Promise( function(resolve, reject) {
+    var reader = new FileReader();
+    var deferred = Promise.defer();
+    reader.onload = function(progressEvent) {
+      resolve(this.result);
+    };
+    reader.readAsText(file, "UTF-8");
+  });
 }
