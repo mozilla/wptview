@@ -4,7 +4,7 @@
 <div ng-app="wptview" ng-controller="wptviewController">
   <input type="file" id="log_file" custom-on-change="uploadFile">
   <br>
-  <button ng-click="fillTable()">Generate!</button>
+  <button ng-click="fillTable()" ng-disabled="isGenerateDisabled">Generate!</button>
   <table ng-table="resultsTable" border="1">
     <tr>
       <td>Test File</td>

@@ -18,3 +18,13 @@ function testsFilter(parsedLine) {
   var pattr2 = /^(?:error)|(?:critical)/i;
   return (pattr.test(parsedLine.action) || (parsedLine.action=="log" && pattr2.test(parsedLine.level)));
 }
+
+function readFile(file) {
+  var reader = new FileReader();
+  var deferred = Promise.defer();
+  reader.onload = function(progressEvent) {
+    deferred.resolve(this.result);
+  };
+  reader.readAsText(file, "UTF-8");
+  return deferred.promise;
+}

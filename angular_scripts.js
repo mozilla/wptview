@@ -11,35 +11,49 @@ app.directive('customOnChange', function() {
   };
 });
 
-app.factory('Lovefield',function() {
-  var Lovefield = function() {
+app.factory('ResultsModel',function() {
+  var ResultsModel = function() {
     this.service = new LovefieldService();
   }
-  return Lovefield;
-});
 
-app.controller('wptviewController', function($scope, Lovefield) {
-  var lovefield = (new Lovefield()).service;
-  $scope.results = {};
-  $scope.uploadFile = function (evt) {
-    var file = evt.target.files[0];
-    var reader = new FileReader();
-    reader.onload = function(progressEvent) {
-      var JSONArray = logCruncher(this.result, testsFilter);
+  ResultsModel.prototype.addResultsFromLogs = function (file) {
+    var lovefield = this.service;
+    return readFile(file).then(function(result) {
+      var JSONArray = logCruncher(result, testsFilter);
       console.log(JSONArray);
-      lovefield.getDbConnection().then( function(db) {
-        lovefield.insertTests(JSONArray).then(function(results) {
+      return lovefield.getDbConnection().then(function(db) {
+        return lovefield.insertTests(JSONArray).then(function(results) {
           console.log("Tests successfully added!");
-          lovefield.insertTestResults(JSONArray, results).then(function() {
+          return lovefield.insertTestResults(JSONArray, results).then(function() {
             console.log("Test results successfully added!");
           });
         });
       });
-    };
-    reader.readAsText(file, "UTF-8");
+    });
+  }
+
+  ResultsModel.prototype.getResults = function() {
+    var lovefield = this.service;
+    return lovefield.selectNTests();
+  }
+
+  return ResultsModel;
+});
+
+app.controller('wptviewController', function($scope, ResultsModel) {
+  $scope.results = {};
+  $scope.isGenerateDisabled = true;
+  var resultsModel = new ResultsModel();
+  $scope.uploadFile = function (evt) {
+    var file = evt.target.files[0];
+    resultsModel.addResultsFromLogs(file).then(function() {
+      console.log("Results added!");
+      $scope.isGenerateDisabled = false;
+      $scope.$apply();
+    });
   }
   $scope.fillTable = function() {
-    lovefield.selectNTests().then(function(results) {
+    resultsModel.getResults().then(function(results) {
       console.log(results);
       $scope.results = results;
       $scope.$apply();
