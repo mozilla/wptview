@@ -1,16 +1,20 @@
 function logCruncher(rawtext, filter) {
   var JSONArray = [];
-  var lines = rawtext.split('\n');
-  for (var i=0; i<lines.length; i++) {
-    if (lines[i]=="") {
-      continue;
+  var deferred = Promise.defer();
+  setTimeout(function() {
+    var lines = rawtext.split('\n');
+    for (var i=0; i<lines.length; i++) {
+      if (lines[i]=="") {
+        continue;
+      }
+      var json = JSON.parse(lines[i]);
+      if (filter(json)) {
+        JSONArray.push(json);
+      }
     }
-    var json = JSON.parse(lines[i]);
-    if (filter(json)) {
-      JSONArray.push(json);
-    }
-  }
-  return JSONArray;
+    deferred.resolve(JSONArray);
+  },0);
+  return deferred.promise;
 }
 
 function testsFilter(parsedLine) {

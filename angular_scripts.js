@@ -18,18 +18,13 @@ app.factory('ResultsModel',function() {
 
   ResultsModel.prototype.addResultsFromLogs = function (file) {
     var lovefield = this.service;
-    return readFile(file).then(function(result) {
-      var JSONArray = logCruncher(result, testsFilter);
-      console.log(JSONArray);
-      return lovefield.getDbConnection().then(function(db) {
-        return lovefield.insertTests(JSONArray).then(function(results) {
-          console.log("Tests successfully added!");
-          return lovefield.insertTestResults(JSONArray, results).then(function() {
-            console.log("Test results successfully added!");
-          });
-        });
-      });
-    });
+    var resultData = null;
+    return readFile(file)
+      .then(function(logData) {return logCruncher(logData, testsFilter)})
+      .then(function(data) {resultData = data})
+      .then(function() {return lovefield.getDbConnection()})
+      .then(function() {return lovefield.insertTests(resultData)})
+      .then(function(tests) {return lovefield.insertTestResults(resultData, tests)})
   }
 
   ResultsModel.prototype.getResults = function() {
