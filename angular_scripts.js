@@ -32,6 +32,11 @@ app.factory('ResultsModel',function() {
     return lovefield.selectNTests();
   }
 
+  ResultsModel.prototype.removeResults = function() {
+    var lovefield = this.service;
+    return lovefield.deleteEntries();
+  }
+
   return ResultsModel;
 });
 
@@ -55,6 +60,11 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     });
   }
   $scope.clearTable = function() {
-    $scope.results = {};
+    resultsModel.removeResults().then(function() {
+      console.log("Table successfully cleared!");
+      $scope.results = {};
+      $scope.isGenerateDisabled = true;
+      $scope.$apply();
+    });
   }
 });
