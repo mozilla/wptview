@@ -106,3 +106,15 @@ LovefieldService.prototype.insertTestResults = function(testLogsRaw, tests) {
       values(testResultsRows);
   return q1.exec();
 }
+
+LovefieldService.prototype.selectNTests = function() {
+  var tests = this.tests;
+  var test_results = this.test_results;
+  return this.db_.
+    select(tests.test.as("test"), test_results.message.as("message"), test_results.status.as("status")).
+    from(tests).
+    innerJoin(test_results, tests.id.eq(test_results.test_id)).
+    where(tests.id.lt(40)).
+    orderBy(tests.id).
+    exec();
+}

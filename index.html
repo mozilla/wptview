@@ -1,29 +1,27 @@
 <html>
 <body>
-<input type="file" id="log_file">
+
+<div ng-app="wptview" ng-controller="wptviewController">
+  <input type="file" id="log_file" custom-on-change="uploadFile">
+  <br>
+  <button ng-click="fillTable()" ng-disabled="isGenerateDisabled">Generate!</button>
+  <table ng-table="resultsTable" border="1">
+    <tr>
+      <td>Test File</td>
+      <td>Result</td>
+      <td>Error Message</td>
+    </tr>
+    <tr ng-repeat="result in results">
+      <td>{{ result.test }}</td>
+      <td>{{ result.status }}</td>
+      <td>{{ result.message }}</td>
+    </tr>
+  </table>
+</div>
 <script src="lf_scripts/lovefield.js"></script>
 <script src="LovefieldService.js"></script>
 <script src="logcruncher.js"></script>
-<script>
-function handleLog(evt) {
-  var file = evt.target.files[0];
-  var reader = new FileReader();
-  reader.onload = function(progressEvent) {
-    var JSONArray = logCruncher(this.result, testsFilter);
-    console.log(JSONArray);
-    var lovefield = new LovefieldService();
-    lovefield.getDbConnection().then( function(db) {
-      lovefield.insertTests(JSONArray).then(function(results) {
-        console.log("Tests successfully added!");
-        lovefield.insertTestResults(JSONArray, results).then(function() {
-          console.log("Test results successfully added!");
-        });
-      });
-    });
-  };
-  reader.readAsText(file, "UTF-8");
-}
-document.getElementById("log_file").addEventListener("change", handleLog, false);
-</script>
+<script src="angular.min.js"></script>
+<script src="angular_scripts.js"></script>
 </body>
 </html>
