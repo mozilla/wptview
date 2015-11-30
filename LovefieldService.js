@@ -118,3 +118,10 @@ LovefieldService.prototype.selectNTests = function() {
     orderBy(tests.id).
     exec();
 }
+
+LovefieldService.prototype.deleteEntries = function() {
+  var q1 = this.db_.delete().from(this.tests);
+  var q2 = this.db_.delete().from(this.test_results);
+  var tx = this.db_.createTransaction();
+  return tx.exec([q1, q2]);
+}

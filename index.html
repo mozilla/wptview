@@ -5,6 +5,7 @@
   <input type="file" id="log_file" custom-on-change="uploadFile">
   <br>
   <button ng-click="fillTable()" ng-disabled="isGenerateDisabled">Generate!</button>
+  <button ng-click="clearTable()" ng-disabled="isGenerateDisabled">Clear!</button>
   <table ng-table="resultsTable" border="1">
     <tr>
       <td>Test File</td>
