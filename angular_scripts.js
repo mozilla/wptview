@@ -54,4 +54,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
       $scope.$apply();
     });
   }
+  $scope.clearTable = function() {
+    $scope.results = {};
+  }
 });
