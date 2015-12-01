@@ -56,6 +56,8 @@ app.factory('ResultsModel',function() {
 
 app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.results = {};
+  $scope.warning_message = "";
+  $scope.warnings = [];
   $scope.isGenerateDisabled = true;
   var resultsModel = new ResultsModel();
   $scope.uploadFile = function (evt) {
@@ -63,6 +65,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     resultsModel.addResultsFromLogs(file, "Firefox").then(function() {
       console.log("Results added!");
       $scope.isGenerateDisabled = false;
+      $scope.warning_message = $scope.warnings.length + " warnings found.";
       $scope.$apply();
     });
   }

@@ -1,7 +1,7 @@
 <html>
 <body>
 
-<div ng-app="wptview" ng-controller="wptviewController">
+<div id="wptview" ng-app="wptview" ng-controller="wptviewController">
   <input type="file" id="log_file" custom-on-change="uploadFile">
   <br>
   <button ng-click="fillTable()" ng-disabled="isGenerateDisabled">Generate!</button>
@@ -18,6 +18,9 @@
       <td>{{ result.message }}</td>
     </tr>
   </table>
+  <p>
+    {{ warning_message }}
+  </p>
 </div>
 <script src="lf_scripts/lovefield.js"></script>
 <script src="LovefieldService.js"></script>

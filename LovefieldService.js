@@ -62,7 +62,7 @@ LovefieldService.prototype.buildSchema_ = function() {
       addColumn('test_id', lf.Type.INTEGER).
       addColumn('run_id', lf.Type.INTEGER).
       addPrimaryKey(['result_id'], true).
-      addUnique("unique_fk",['run_id', 'test_id']).
+      addUnique("unique_fk", ['run_id', 'test_id']).
       addForeignKey('fk_test_id', {
         local: 'test_id',
         ref: 'tests.id'
@@ -96,14 +96,22 @@ LovefieldService.prototype.insertTests = function(testLogsRaw, currentTests) {
   var tests = this.tests;
   var currentTestMap = {};
   currentTests.forEach(function(currentTest) {
-    currentTestMap[currentTest.test]=currentTest;
+    currentTestMap[currentTest.test] = 1;
   });
+  var testsBeingAdded = {};
   testLogsRaw.forEach(function(testLog) {
     if (testLog.action == "test_start" && !(testLog.test in currentTestMap)) {
-      var row = tests.createRow({
-        'test': testLog.test,
-      });
-      testRows.push(row);
+      if (testLog.test in testsBeingAdded) {
+        // Notify UI
+        updateWarnings(testLog.test);
+      }
+      else {
+        testsBeingAdded[testLog.test] = 1;
+        var row = tests.createRow({
+          'test': testLog.test,
+        });
+        testRows.push(row);
+      }
     }
   });
   var q1 = this.db_.
@@ -122,16 +130,23 @@ var test_run_id = test_runs[0].run_id;
   });
   var testResultsRows = [];
   var test_results = this.test_results;
+  var testResultsBeingAdded = {};
   testLogsRaw.forEach(function(testLog) {
     if (testLog.action == "test_end") {
-      var resultId = testIds[testLog.test];
-      var row = test_results.createRow({
-        'status': testLog.status,
-        'message': testLog.message,
-        'test_id': resultId,
-        'run_id': test_run_id
-      });
-      testResultsRows.push(row);
+      if (testLog.test in testResultsBeingAdded) {
+        // Notify UI
+      }
+      else {
+        testResultsBeingAdded[testLog.test] = 1;
+        var resultId = testIds[testLog.test];
+        var row = test_results.createRow({
+          'status': testLog.status,
+          'message': testLog.message,
+          'test_id': resultId,
+          'run_id': test_run_id
+        });
+        testResultsRows.push(row);
+      }
     }
   });
   var q1 = this.db_.
@@ -152,16 +167,26 @@ LovefieldService.prototype.insertSubtests = function(testLogsRaw, tests, current
   currentSubtests.forEach(function(currentSubtest) {
     if (!(currentSubtest.test in currentSubtestMap))
       currentSubtestMap[currentSubtest.test] = {};
-    currentSubtestMap[currentSubtest.test][currentSubtest.title] = currentSubtest;
+    currentSubtestMap[currentSubtest.test][currentSubtest.title] = 1;
   });
+  var subtestsBeingAdded = {};
   testLogsRaw.forEach(function(testLog) {
     if (testLog.action == "test_status" && (!(testLog.test in currentSubtestMap) || !(testLog.subtest in currentSubtestMap[testLog.test]))) {
-      var row = tests.createRow({
-        'test': testLog.test,
-        'parent_id': testIds[testLog.test],
-        'title': testLog.subtest
-      });
-      subtestRows.push(row);
+      if ((testLog.test in subtestsBeingAdded) && (testLog.subtest in subtestsBeingAdded[testLog.test])) {
+        // Notify UI
+        updateWarnings(testLog.test, testLog.subtest);
+      }
+      else {
+        if (!(testLog.test in subtestsBeingAdded))
+          subtestsBeingAdded[testLog.test]={};
+        subtestsBeingAdded[testLog.test][testLog.subtest]=1;
+        var row = tests.createRow({
+          'test': testLog.test,
+          'parent_id': testIds[testLog.test],
+          'title': testLog.subtest
+        });
+        subtestRows.push(row);
+      }
     }
   });
   var q1 = this.db_.
@@ -181,16 +206,25 @@ LovefieldService.prototype.insertSubtestResults = function(testLogsRaw, subtests
   });
   var subtestResultsRows = [];
   var test_results = this.test_results;
+  var subtestResultsBeingAdded = {};
   testLogsRaw.forEach(function(testLog) {
     if (testLog.action == "test_status") {
-      var resultId = subtestIds[testLog.test][testLog.subtest];
-      var row = test_results.createRow({
-        'status': testLog.status,
-        'message': testLog.message,
-        'test_id': resultId,
-        'run_id': test_run_id
-      });
-      subtestResultsRows.push(row);
+      if ((testLog.test in subtestResultsBeingAdded) && (testLog.subtest in subtestResultsBeingAdded[testLog.test])) {
+        // Notify UI
+      }
+      else {
+        if (!(testLog.test in subtestResultsBeingAdded))
+          subtestResultsBeingAdded[testLog.test]={};
+        subtestResultsBeingAdded[testLog.test][testLog.subtest]=1;
+        var resultId = subtestIds[testLog.test][testLog.subtest];
+        var row = test_results.createRow({
+          'status': testLog.status,
+          'message': testLog.message,
+          'test_id': resultId,
+          'run_id': test_run_id
+        });
+        subtestResultsRows.push(row);
+      }
     }
   });
   var q1 = this.db_.
