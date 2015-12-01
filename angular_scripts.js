@@ -19,12 +19,15 @@ app.factory('ResultsModel',function() {
   ResultsModel.prototype.addResultsFromLogs = function (file) {
     var lovefield = this.service;
     var resultData = null;
+    var testData = null;
     return readFile(file)
       .then(function(logData) {return logCruncher(logData, testsFilter)})
       .then(function(data) {resultData = data})
       .then(function() {return lovefield.getDbConnection()})
       .then(function() {return lovefield.insertTests(resultData)})
-      .then(function(tests) {return lovefield.insertTestResults(resultData, tests)})
+      .then(function(tests) {testData = tests; return lovefield.insertTestResults(resultData, testData)})
+      .then(function() {return lovefield.insertSubtests(resultData, testData)})
+      .then(function(subtests) {return lovefield.insertSubtestResults(resultData, subtests)})
   }
 
   ResultsModel.prototype.getResults = function() {

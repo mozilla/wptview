@@ -44,6 +44,9 @@ LovefieldService.prototype.buildSchema_ = function() {
   schemaBuilder.createTable('tests').
       addColumn('id', lf.Type.INTEGER).
       addColumn('test', lf.Type.STRING).
+      addColumn('parent_id',lf.Type.INTEGER).
+      addColumn('title',lf.Type.STRING).
+      addNullable(['parent_id','title']).
       addPrimaryKey(['id'], true);
   schemaBuilder.createTable('test_results').
       addColumn('result_id', lf.Type.INTEGER).
@@ -104,6 +107,57 @@ LovefieldService.prototype.insertTestResults = function(testLogsRaw, tests) {
       insert().
       into(test_results).
       values(testResultsRows);
+  return q1.exec();
+}
+
+LovefieldService.prototype.insertSubtests = function(testLogsRaw, tests) {
+  testIds = {};
+  tests.forEach(function(test) {
+    testIds[test.test] = test.id;
+  });
+  var subtestRows = [];
+  var tests = this.tests;
+  testLogsRaw.forEach(function(testLog) {
+    if (testLog.action == "test_status") {
+      var row = tests.createRow({
+        'test': testLog.test,
+        'parent_id': testIds[testLog.test],
+        'title': testLog.subtest,
+      });
+      subtestRows.push(row);
+    }
+  });
+  var q1 = this.db_.
+      insert().
+      into(tests).
+      values(subtestRows);
+  return q1.exec();
+}
+
+LovefieldService.prototype.insertSubtestResults = function(testLogsRaw, subtests) {
+  subtestIds = {};
+  subtests.forEach(function(subtest) {
+    if (!(subtest.test in subtestIds))
+      subtestIds[subtest.test] = {};
+    subtestIds[subtest.test][subtest.title] = subtest.id;
+  });
+  var subtestResultsRows = [];
+  var test_results = this.test_results;
+  testLogsRaw.forEach(function(testLog) {
+    if (testLog.action == "test_status") {
+      var resultId = subtestIds[testLog.test][testLog.subtest];
+      var row = test_results.createRow({
+        'status': testLog.status,
+        'message': testLog.message,
+        'test_id': resultId
+      });
+      subtestResultsRows.push(row);
+    }
+  });
+  var q1 = this.db_.
+      insert().
+      into(test_results).
+      values(subtestResultsRows);
   return q1.exec();
 }
 
