@@ -95,17 +95,25 @@ LovefieldService.prototype.insertTests = function(testLogsRaw, currentTests) {
   var testRows = [];
   var tests = this.tests;
   var currentTestMap = {};
+  // We create an associative array whose keys are tests that have been added
+  // in previous insert queries.
   currentTests.forEach(function(currentTest) {
     currentTestMap[currentTest.test] = 1;
   });
+  // This is a list of the tests currently being added with keys being tests.
+  // It differs from testRows as testRows is a special lovefield object.
   var testsBeingAdded = {};
   testLogsRaw.forEach(function(testLog) {
+    // First set of checks to ensure log has "action" set to "test_start"
+    // and does not exist in table. (We don't want to add duplicates!)
     if (testLog.action == "test_start" && !(testLog.test in currentTestMap)) {
+      // Checks whether this test is already present in the insert query array.
       if (testLog.test in testsBeingAdded) {
-        // Notify UI
+        // Notify UI as this is an anomaly.
         updateWarnings(testLog.test);
       }
       else {
+        // Add it to the set of keys
         testsBeingAdded[testLog.test] = 1;
         var row = tests.createRow({
           'test': testLog.test,
@@ -130,13 +138,17 @@ var test_run_id = test_runs[0].run_id;
   });
   var testResultsRows = [];
   var test_results = this.test_results;
+  // As in insertTests(), support added to ensure no duplicate entries are added
+  // in same select query.
   var testResultsBeingAdded = {};
   testLogsRaw.forEach(function(testLog) {
     if (testLog.action == "test_end") {
+      // Duplicate found in same insert query array.
       if (testLog.test in testResultsBeingAdded) {
-        // Notify UI
+        // Notify UI as this is an anomaly.
       }
       else {
+        // Add it to set of keys
         testResultsBeingAdded[testLog.test] = 1;
         var resultId = testIds[testLog.test];
         var row = test_results.createRow({
@@ -163,20 +175,29 @@ LovefieldService.prototype.insertSubtests = function(testLogsRaw, tests, current
   });
   var subtestRows = [];
   var tests = this.tests;
+  // Creating a 2-D hash map to store existing subtests in the table inserted
+  // via previous insert queries. The first dimension corresponds to test,
+  // and the second dimension corresponds to subtest.
   var currentSubtestMap = {};
   currentSubtests.forEach(function(currentSubtest) {
     if (!(currentSubtest.test in currentSubtestMap))
       currentSubtestMap[currentSubtest.test] = {};
     currentSubtestMap[currentSubtest.test][currentSubtest.title] = 1;
   });
+
+  // Similarly, creating a 2-D hash map for tests being added in this insert query.
   var subtestsBeingAdded = {};
   testLogsRaw.forEach(function(testLog) {
+    // Checking whether "action" is of "test_status" type and the subtest hasn't
+    // been inserted previously to our test table.
     if (testLog.action == "test_status" && (!(testLog.test in currentSubtestMap) || !(testLog.subtest in currentSubtestMap[testLog.test]))) {
+      // Checking whether this subtest has been added previously in the same insert query.
       if ((testLog.test in subtestsBeingAdded) && (testLog.subtest in subtestsBeingAdded[testLog.test])) {
         // Notify UI
         updateWarnings(testLog.test, testLog.subtest);
       }
       else {
+        // Adding test-subtest pair to hash map subtestsBeingAdded
         if (!(testLog.test in subtestsBeingAdded))
           subtestsBeingAdded[testLog.test]={};
         subtestsBeingAdded[testLog.test][testLog.subtest]=1;
