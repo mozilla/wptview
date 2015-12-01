@@ -50,25 +50,25 @@ LovefieldService.prototype.buildSchema_ = function() {
       addPrimaryKey(['run_id'],true);
   schemaBuilder.createTable('tests').
       addColumn('id', lf.Type.INTEGER).
-      addColumn('run_id', lf.Type.INTEGER).
       addColumn('test', lf.Type.STRING).
       addColumn('parent_id',lf.Type.INTEGER).
       addColumn('title',lf.Type.STRING).
       addNullable(['parent_id','title']).
-      addPrimaryKey(['id'], true).
-      addForeignKey('fk_run_id', {
-        local: 'run_id',
-        ref: 'test_runs.run_id'
-      });
+      addPrimaryKey(['id'], true);
   schemaBuilder.createTable('test_results').
       addColumn('result_id', lf.Type.INTEGER).
       addColumn('status', lf.Type.STRING).
       addColumn('message', lf.Type.STRING).
       addColumn('test_id', lf.Type.INTEGER).
+      addColumn('run_id', lf.Type.INTEGER).
       addPrimaryKey(['result_id'], true).
       addForeignKey('fk_test_id', {
         local: 'test_id',
         ref: 'tests.id'
+      }).
+      addForeignKey('fk_run_id', {
+        local: 'run_id',
+        ref: 'test_runs.run_id'
       });
 
   return schemaBuilder;
@@ -90,16 +90,17 @@ LovefieldService.prototype.insertTestRuns = function(run_name) {
   return q1.exec();
 }
 
-LovefieldService.prototype.insertTests = function(testLogsRaw, test_runs) {
-  console.log(test_runs);
-  var test_run_id = test_runs[0].run_id;
+LovefieldService.prototype.insertTests = function(testLogsRaw, currentTests) {
   var testRows = [];
   var tests = this.tests;
+  var currentTestMap = {};
+  currentTests.forEach(function(currentTest) {
+    currentTestMap[currentTest.test]=currentTest;
+  });
   testLogsRaw.forEach(function(testLog) {
-    if (testLog.action == "test_start") {
+    if (testLog.action == "test_start" && !(testLog.test in currentTestMap)) {
       var row = tests.createRow({
         'test': testLog.test,
-        'run_id': test_run_id
       });
       testRows.push(row);
     }
@@ -111,8 +112,9 @@ LovefieldService.prototype.insertTests = function(testLogsRaw, test_runs) {
   return q1.exec();
 }
 
-LovefieldService.prototype.insertTestResults = function(testLogsRaw, tests) {
+LovefieldService.prototype.insertTestResults = function(testLogsRaw, tests, test_runs) {
   // Let's first create a test to id mapping
+var test_run_id = test_runs[0].run_id;
   testIds = {};
   tests.forEach(function(test) {
     testIds[test.test] = test.id;
@@ -125,7 +127,8 @@ LovefieldService.prototype.insertTestResults = function(testLogsRaw, tests) {
       var row = test_results.createRow({
         'status': testLog.status,
         'message': testLog.message,
-        'test_id': resultId
+        'test_id': resultId,
+        'run_id': test_run_id
       });
       testResultsRows.push(row);
     }
@@ -137,21 +140,25 @@ LovefieldService.prototype.insertTestResults = function(testLogsRaw, tests) {
   return q1.exec();
 }
 
-LovefieldService.prototype.insertSubtests = function(testLogsRaw, tests, test_runs) {
+LovefieldService.prototype.insertSubtests = function(testLogsRaw, tests, currentSubtests) {
   testIds = {};
-  var test_run_id = test_runs[0].run_id;
   tests.forEach(function(test) {
     testIds[test.test] = test.id;
   });
   var subtestRows = [];
   var tests = this.tests;
+  var currentSubtestMap = {};
+  currentSubtests.forEach(function(currentSubtest) {
+    if (!(currentSubtest.test in currentSubtestMap))
+      currentSubtestMap[currentSubtest.test] = {};
+    currentSubtestMap[currentSubtest.test][currentSubtest.title] = currentSubtest;
+  });
   testLogsRaw.forEach(function(testLog) {
-    if (testLog.action == "test_status") {
+    if (testLog.action == "test_status" && (!(testLog.test in currentSubtestMap) || !(testLog.subtest in currentSubtestMap[testLog.test]))) {
       var row = tests.createRow({
         'test': testLog.test,
         'parent_id': testIds[testLog.test],
-        'title': testLog.subtest,
-        'run_id': test_run_id
+        'title': testLog.subtest
       });
       subtestRows.push(row);
     }
@@ -163,8 +170,9 @@ LovefieldService.prototype.insertSubtests = function(testLogsRaw, tests, test_ru
   return q1.exec();
 }
 
-LovefieldService.prototype.insertSubtestResults = function(testLogsRaw, subtests) {
+LovefieldService.prototype.insertSubtestResults = function(testLogsRaw, subtests, test_runs) {
   subtestIds = {};
+  var test_run_id = test_runs[0].run_id;
   subtests.forEach(function(subtest) {
     if (!(subtest.test in subtestIds))
       subtestIds[subtest.test] = {};
@@ -178,7 +186,8 @@ LovefieldService.prototype.insertSubtestResults = function(testLogsRaw, subtests
       var row = test_results.createRow({
         'status': testLog.status,
         'message': testLog.message,
-        'test_id': resultId
+        'test_id': resultId,
+        'run_id': test_run_id
       });
       subtestResultsRows.push(row);
     }
@@ -188,6 +197,24 @@ LovefieldService.prototype.insertSubtestResults = function(testLogsRaw, subtests
       into(test_results).
       values(subtestResultsRows);
   return q1.exec();
+}
+
+LovefieldService.prototype.selectAllParentTests = function() {
+  var tests = this.tests;
+  return this.db_.
+    select().
+    from(tests).
+    where(tests.parent_id.eq(null)).
+    exec();
+}
+
+LovefieldService.prototype.selectAllSubtests = function() {
+  var tests = this.tests;
+  return this.db_.
+    select().
+    from(tests).
+    where(tests.parent_id.neq(null)).
+    exec();
 }
 
 LovefieldService.prototype.selectNTests = function() {

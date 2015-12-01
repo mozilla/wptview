@@ -25,11 +25,20 @@ app.factory('ResultsModel',function() {
       .then(function(logData) {return logCruncher(logData, testsFilter)})
       .then(function(data) {resultData = data})
       .then(function() {return lovefield.getDbConnection()})
+      // Filling the test_runs table
       .then(function() {return lovefield.insertTestRuns(run_name)})
-      .then(function(test_runs) {testRunData = test_runs; return lovefield.insertTests(resultData, testRunData)})
-      .then(function(tests) {testData = tests; return lovefield.insertTestResults(resultData, testData)})
-      .then(function() {return lovefield.insertSubtests(resultData, testData, testRunData)})
-      .then(function(subtests) {return lovefield.insertSubtestResults(resultData, subtests)})
+      // Selecting current tests table, adding extra entries only
+      .then(function(test_runs) {testRunData = test_runs; return lovefield.selectAllParentTests()})
+      .then(function(parent_tests) {return lovefield.insertTests(resultData, parent_tests)})
+      .then(function() {return lovefield.selectAllParentTests()})
+      // populating results table with parent test results
+      .then(function(tests) {testData = tests; return lovefield.insertTestResults(resultData, testData, testRunData)})
+      // add subtests to tests table
+      .then(function() {return lovefield.selectAllSubtests()})
+      .then(function(subtests) {return lovefield.insertSubtests(resultData, testData, subtests)})
+      .then(function() {return lovefield.selectAllSubtests()})
+      // adding subtest results
+      .then(function(subtests) {return lovefield.insertSubtestResults(resultData, subtests, testRunData)})
   }
 
   ResultsModel.prototype.getResults = function() {
