@@ -62,6 +62,7 @@ LovefieldService.prototype.buildSchema_ = function() {
       addColumn('test_id', lf.Type.INTEGER).
       addColumn('run_id', lf.Type.INTEGER).
       addPrimaryKey(['result_id'], true).
+      addUnique("unique_fk",['run_id', 'test_id']).
       addForeignKey('fk_test_id', {
         local: 'test_id',
         ref: 'tests.id'
