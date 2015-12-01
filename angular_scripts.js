@@ -16,17 +16,19 @@ app.factory('ResultsModel',function() {
     this.service = new LovefieldService();
   }
 
-  ResultsModel.prototype.addResultsFromLogs = function (file) {
+  ResultsModel.prototype.addResultsFromLogs = function (file, run_name) {
     var lovefield = this.service;
     var resultData = null;
     var testData = null;
+    var testRunData = null;
     return readFile(file)
       .then(function(logData) {return logCruncher(logData, testsFilter)})
       .then(function(data) {resultData = data})
       .then(function() {return lovefield.getDbConnection()})
-      .then(function() {return lovefield.insertTests(resultData)})
+      .then(function() {return lovefield.insertTestRuns(run_name)})
+      .then(function(test_runs) {testRunData = test_runs; return lovefield.insertTests(resultData, testRunData)})
       .then(function(tests) {testData = tests; return lovefield.insertTestResults(resultData, testData)})
-      .then(function() {return lovefield.insertSubtests(resultData, testData)})
+      .then(function() {return lovefield.insertSubtests(resultData, testData, testRunData)})
       .then(function(subtests) {return lovefield.insertSubtestResults(resultData, subtests)})
   }
 
@@ -49,7 +51,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   var resultsModel = new ResultsModel();
   $scope.uploadFile = function (evt) {
     var file = evt.target.files[0];
-    resultsModel.addResultsFromLogs(file).then(function() {
+    resultsModel.addResultsFromLogs(file, "Firefox").then(function() {
       console.log("Results added!");
       $scope.isGenerateDisabled = false;
       $scope.$apply();

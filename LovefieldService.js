@@ -1,6 +1,7 @@
 var LovefieldService = function() {
   // Following member variables are initialized within getDbConnection().
   this.db_ = null;
+  this.test_runs = null;
   this.tests = null;
   this.test_results = null;
 };
@@ -11,6 +12,8 @@ var LovefieldService = function() {
  * @private
  */
 LovefieldService.prototype.onConnected_ = function() {
+
+  this.test_runs = this.db_.getSchema().table('test_runs');
   this.tests = this.db_.getSchema().table('tests');
   this.test_results = this.db_.getSchema().table('test_results');
 };
@@ -40,14 +43,23 @@ LovefieldService.prototype.getDbConnection = function() {
  * @private
  */
 LovefieldService.prototype.buildSchema_ = function() {
-  var schemaBuilder = lf.schema.create('wptview', 1);
+  var schemaBuilder = lf.schema.create('wptview4', 1);
+  schemaBuilder.createTable('test_runs').
+      addColumn('run_id', lf.Type.INTEGER).
+      addColumn('name', lf.Type.STRING).
+      addPrimaryKey(['run_id'],true);
   schemaBuilder.createTable('tests').
       addColumn('id', lf.Type.INTEGER).
+      addColumn('run_id', lf.Type.INTEGER).
       addColumn('test', lf.Type.STRING).
       addColumn('parent_id',lf.Type.INTEGER).
       addColumn('title',lf.Type.STRING).
       addNullable(['parent_id','title']).
-      addPrimaryKey(['id'], true);
+      addPrimaryKey(['id'], true).
+      addForeignKey('fk_run_id', {
+        local: 'run_id',
+        ref: 'test_runs.run_id'
+      });
   schemaBuilder.createTable('test_results').
       addColumn('result_id', lf.Type.INTEGER).
       addColumn('status', lf.Type.STRING).
@@ -65,14 +77,29 @@ LovefieldService.prototype.buildSchema_ = function() {
 
 var testLogsRaw;
 
+LovefieldService.prototype.insertTestRuns = function(run_name) {
+  var testRunRows = [];
+  var test_runs = this.test_runs;
+  testRunRows.push(test_runs.createRow({
+    'name': run_name
+  }));
+  var q1 = this.db_.
+      insert().
+      into(test_runs).
+      values(testRunRows);
+  return q1.exec();
+}
 
-LovefieldService.prototype.insertTests = function(testLogsRaw) {
+LovefieldService.prototype.insertTests = function(testLogsRaw, test_runs) {
+  console.log(test_runs);
+  var test_run_id = test_runs[0].run_id;
   var testRows = [];
   var tests = this.tests;
   testLogsRaw.forEach(function(testLog) {
     if (testLog.action == "test_start") {
       var row = tests.createRow({
-        'test': testLog.test
+        'test': testLog.test,
+        'run_id': test_run_id
       });
       testRows.push(row);
     }
@@ -82,7 +109,7 @@ LovefieldService.prototype.insertTests = function(testLogsRaw) {
       into(tests).
       values(testRows);
   return q1.exec();
-};
+}
 
 LovefieldService.prototype.insertTestResults = function(testLogsRaw, tests) {
   // Let's first create a test to id mapping
@@ -110,8 +137,9 @@ LovefieldService.prototype.insertTestResults = function(testLogsRaw, tests) {
   return q1.exec();
 }
 
-LovefieldService.prototype.insertSubtests = function(testLogsRaw, tests) {
+LovefieldService.prototype.insertSubtests = function(testLogsRaw, tests, test_runs) {
   testIds = {};
+  var test_run_id = test_runs[0].run_id;
   tests.forEach(function(test) {
     testIds[test.test] = test.id;
   });
@@ -123,6 +151,7 @@ LovefieldService.prototype.insertSubtests = function(testLogsRaw, tests) {
         'test': testLog.test,
         'parent_id': testIds[testLog.test],
         'title': testLog.subtest,
+        'run_id': test_run_id
       });
       subtestRows.push(row);
     }
@@ -176,6 +205,7 @@ LovefieldService.prototype.selectNTests = function() {
 LovefieldService.prototype.deleteEntries = function() {
   var q1 = this.db_.delete().from(this.tests);
   var q2 = this.db_.delete().from(this.test_results);
+  var q3 = this.db_.delete().from(this.test_runs);
   var tx = this.db_.createTransaction();
-  return tx.exec([q1, q2]);
+  return tx.exec([q1, q2, q3]);
 }
