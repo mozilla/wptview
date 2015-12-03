@@ -43,7 +43,7 @@ LovefieldService.prototype.getDbConnection = function() {
  * @private
  */
 LovefieldService.prototype.buildSchema_ = function() {
-  var schemaBuilder = lf.schema.create('wptview4', 1);
+  var schemaBuilder = lf.schema.create('wptview', 1);
   schemaBuilder.createTable('test_runs').
       addColumn('run_id', lf.Type.INTEGER).
       addColumn('name', lf.Type.STRING).
@@ -78,11 +78,16 @@ LovefieldService.prototype.buildSchema_ = function() {
 
 var testLogsRaw;
 
-LovefieldService.prototype.insertTestRuns = function(run_name) {
+LovefieldService.prototype.insertTestRuns = function(runName, testRuns) {
+  if (testRuns.length!=0) {
+    return new Promise(function(resolve, reject) {
+      resolve(testRuns);
+    });
+  }
   var testRunRows = [];
   var test_runs = this.test_runs;
   testRunRows.push(test_runs.createRow({
-    'name': run_name
+    'name': runName
   }));
   var q1 = this.db_.
       insert().
@@ -108,11 +113,10 @@ LovefieldService.prototype.insertTests = function(testLogsRaw, currentTests) {
     // and does not exist in table. (We don't want to add duplicates!)
     if (testLog.action == "test_start" && !(testLog.test in currentTestMap)) {
       // Checks whether this test is already present in the insert query array.
-      if (testLog.test in testsBeingAdded) {
+      if (testsBeingAdded.hasOwnProperty(testLog.test)) {
         // Notify UI as this is an anomaly.
         updateWarnings(testLog.test);
-      }
-      else {
+      } else {
         // Add it to the set of keys
         testsBeingAdded[testLog.test] = 1;
         var row = tests.createRow({
@@ -129,9 +133,9 @@ LovefieldService.prototype.insertTests = function(testLogsRaw, currentTests) {
   return q1.exec();
 }
 
-LovefieldService.prototype.insertTestResults = function(testLogsRaw, tests, test_runs) {
+LovefieldService.prototype.insertTestResults = function(testLogsRaw, tests, testRuns) {
   // Let's first create a test to id mapping
-var test_run_id = test_runs[0].run_id;
+  var testRunId = testRuns[0].run_id;
   testIds = {};
   tests.forEach(function(test) {
     testIds[test.test] = test.id;
@@ -144,10 +148,10 @@ var test_run_id = test_runs[0].run_id;
   testLogsRaw.forEach(function(testLog) {
     if (testLog.action == "test_end") {
       // Duplicate found in same insert query array.
-      if (testLog.test in testResultsBeingAdded) {
+      if (testResultsBeingAdded.hasOwnProperty(testLog.test)) {
         // Notify UI as this is an anomaly.
-      }
-      else {
+        // We have taken care of this in the insertTests function.
+      } else {
         // Add it to set of keys
         testResultsBeingAdded[testLog.test] = 1;
         var resultId = testIds[testLog.test];
@@ -155,7 +159,7 @@ var test_run_id = test_runs[0].run_id;
           'status': testLog.status,
           'message': testLog.message,
           'test_id': resultId,
-          'run_id': test_run_id
+          'run_id': testRunId
         });
         testResultsRows.push(row);
       }
@@ -180,27 +184,27 @@ LovefieldService.prototype.insertSubtests = function(testLogsRaw, tests, current
   // and the second dimension corresponds to subtest.
   var currentSubtestMap = {};
   currentSubtests.forEach(function(currentSubtest) {
-    if (!(currentSubtest.test in currentSubtestMap))
+    if (!currentSubtestMap.hasOwnProperty(currentSubtest.test)) {
       currentSubtestMap[currentSubtest.test] = {};
+    }
     currentSubtestMap[currentSubtest.test][currentSubtest.title] = 1;
   });
 
   // Similarly, creating a 2-D hash map for tests being added in this insert query.
   var subtestsBeingAdded = {};
   testLogsRaw.forEach(function(testLog) {
-    // Checking whether "action" is of "test_status" type and the subtest hasn't
-    // been inserted previously to our test table.
-    if (testLog.action == "test_status" && (!(testLog.test in currentSubtestMap) || !(testLog.subtest in currentSubtestMap[testLog.test]))) {
+    // Checking whether subtest hasn't been inserted previously to our test table.
+    if (testLog.action == "test_status" && !(currentSubtestMap.hasOwnProperty(testLog.test) && currentSubtestMap[testLog.test].hasOwnProperty(testLog.subtest))) {
       // Checking whether this subtest has been added previously in the same insert query.
-      if ((testLog.test in subtestsBeingAdded) && (testLog.subtest in subtestsBeingAdded[testLog.test])) {
+      if (subtestsBeingAdded.hasOwnProperty(testLog.test) && subtestsBeingAdded[testLog.test].hasOwnProperty(testLog.subtest)) {
         // Notify UI
         updateWarnings(testLog.test, testLog.subtest);
-      }
-      else {
+      } else {
         // Adding test-subtest pair to hash map subtestsBeingAdded
-        if (!(testLog.test in subtestsBeingAdded))
-          subtestsBeingAdded[testLog.test]={};
-        subtestsBeingAdded[testLog.test][testLog.subtest]=1;
+        if (!subtestsBeingAdded.hasOwnProperty(testLog.test)) {
+          subtestsBeingAdded[testLog.test] = {};
+        }
+        subtestsBeingAdded[testLog.test][testLog.subtest] = 1;
         var row = tests.createRow({
           'test': testLog.test,
           'parent_id': testIds[testLog.test],
@@ -217,9 +221,9 @@ LovefieldService.prototype.insertSubtests = function(testLogsRaw, tests, current
   return q1.exec();
 }
 
-LovefieldService.prototype.insertSubtestResults = function(testLogsRaw, subtests, test_runs) {
+LovefieldService.prototype.insertSubtestResults = function(testLogsRaw, subtests, testRuns) {
   subtestIds = {};
-  var test_run_id = test_runs[0].run_id;
+  var testRunId = testRuns[0].run_id;
   subtests.forEach(function(subtest) {
     if (!(subtest.test in subtestIds))
       subtestIds[subtest.test] = {};
@@ -230,19 +234,19 @@ LovefieldService.prototype.insertSubtestResults = function(testLogsRaw, subtests
   var subtestResultsBeingAdded = {};
   testLogsRaw.forEach(function(testLog) {
     if (testLog.action == "test_status") {
-      if ((testLog.test in subtestResultsBeingAdded) && (testLog.subtest in subtestResultsBeingAdded[testLog.test])) {
+      if (subtestResultsBeingAdded.hasOwnProperty(testLog.test) && subtestResultsBeingAdded[testLog.test].hasOwnProperty(testLog.subtest)) {
         // Notify UI
-      }
-      else {
-        if (!(testLog.test in subtestResultsBeingAdded))
-          subtestResultsBeingAdded[testLog.test]={};
-        subtestResultsBeingAdded[testLog.test][testLog.subtest]=1;
+        // Taken care of in insertSubtests
+      } else {
+        if (!subtestResultsBeingAdded.hasOwnProperty(testLog.test))
+          subtestResultsBeingAdded[testLog.test] = {};
+        subtestResultsBeingAdded[testLog.test][testLog.subtest] = 1;
         var resultId = subtestIds[testLog.test][testLog.subtest];
         var row = test_results.createRow({
           'status': testLog.status,
           'message': testLog.message,
           'test_id': resultId,
-          'run_id': test_run_id
+          'run_id': testRunId
         });
         subtestResultsRows.push(row);
       }
@@ -291,4 +295,13 @@ LovefieldService.prototype.deleteEntries = function() {
   var q3 = this.db_.delete().from(this.test_runs);
   var tx = this.db_.createTransaction();
   return tx.exec([q1, q2, q3]);
+}
+
+LovefieldService.prototype.selectParticularRun = function(runName) {
+  var test_runs = this.test_runs;
+  return this.db_.
+    select().
+    from(test_runs).
+    where(test_runs.name.eq(runName)).
+    exec();
 }

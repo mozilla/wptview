@@ -16,7 +16,7 @@ app.factory('ResultsModel',function() {
     this.service = new LovefieldService();
   }
 
-  ResultsModel.prototype.addResultsFromLogs = function (file, run_name) {
+  ResultsModel.prototype.addResultsFromLogs = function (file, runName) {
     var lovefield = this.service;
     var resultData = null;
     var testData = null;
@@ -26,10 +26,11 @@ app.factory('ResultsModel',function() {
       .then(function(data) {resultData = data})
       .then(function() {return lovefield.getDbConnection()})
       // Filling the test_runs table
-      .then(function() {return lovefield.insertTestRuns(run_name)})
+      .then(function() {return lovefield.selectParticularRun(runName)})
+      .then(function(testRuns) {return lovefield.insertTestRuns(runName, testRuns)})
       // Selecting current tests table, adding extra entries only
-      .then(function(test_runs) {testRunData = test_runs; return lovefield.selectAllParentTests()})
-      .then(function(parent_tests) {return lovefield.insertTests(resultData, parent_tests)})
+      .then(function(testRuns) {testRunData = testRuns; return lovefield.selectAllParentTests()})
+      .then(function(parentTests) {return lovefield.insertTests(resultData, parentTests)})
       .then(function() {return lovefield.selectAllParentTests()})
       // populating results table with parent test results
       .then(function(tests) {testData = tests; return lovefield.insertTestResults(resultData, testData, testRunData)})
