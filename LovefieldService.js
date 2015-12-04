@@ -287,7 +287,6 @@ LovefieldService.prototype.selectNTests = function() {
     from(tests).
     innerJoin(test_results, tests.id.eq(test_results.test_id)).
     innerJoin(test_runs, test_results.run_id.eq(test_runs.run_id)).
-    where(tests.parent_id.neq(null)).
     orderBy(tests.id).
     orderBy(test_runs.run_id).
     limit(40).

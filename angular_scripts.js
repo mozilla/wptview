@@ -78,47 +78,18 @@ app.controller('wptviewController', function($scope, ResultsModel) {
       $scope.$apply();
     });
   }
+
   $scope.fillTable = function() {
-    resultsModel.getRuns().then(function(runs) {
-      resultsModel.getResults().then(function(results) {
-        console.log(results);
-
-        $scope.runs = runs;
-        var final_results = $scope.organizeResults(results);
-        console.log(final_results);
-        $scope.results = final_results;
-        $scope.$apply();
-      });
+    resultsModel.getRuns()
+    .then((runs) => $scope.runs = runs)
+    .then(() => resultsModel.getResults())
+    .then((results) => {
+      console.log(results);
+      var finalResults = organizeResults(results);
+      console.log(finalResults);
+      $scope.results = finalResults;
+      $scope.$apply();
     });
-  }
-
-  $scope.organizeResults = function(results) {
-    var testMap = {};
-    results.forEach(function(result) {
-      if (!testMap.hasOwnProperty(result.test)) {
-        testMap[result.test]={};
-      }
-      if (!testMap[result.test].hasOwnProperty(result.title)) {
-        testMap[result.test][result.title]=[];
-      }
-      testMap[result.test][result.title].push({
-        'run_id': result.run_id,
-        'run_name': result.run_name,
-        'status': result.status,
-        'message': result.message
-      });
-    });
-    var final_results = [];
-    for (var test in testMap) {
-      for (var subtest in testMap[test]) {
-        final_results.push({
-          'test': test,
-          'subtest': subtest,
-          'runs': testMap[test][subtest]
-        });
-      }
-    }
-    return final_results;
   }
 
   $scope.clearTable = function() {
