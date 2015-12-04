@@ -12,7 +12,6 @@ var LovefieldService = function() {
  * @private
  */
 LovefieldService.prototype.onConnected_ = function() {
-
   this.test_runs = this.db_.getSchema().table('test_runs');
   this.tests = this.db_.getSchema().table('tests');
   this.test_results = this.db_.getSchema().table('test_results');
@@ -275,12 +274,22 @@ LovefieldService.prototype.selectAllSubtests = function() {
 LovefieldService.prototype.selectNTests = function() {
   var tests = this.tests;
   var test_results = this.test_results;
+  var test_runs = this.test_runs;
   return this.db_.
-    select(tests.test.as("test"), test_results.message.as("message"), test_results.status.as("status")).
+    select(
+      tests.test.as("test"),
+      test_results.message.as("message"),
+      test_results.status.as("status"),
+      tests.title.as("title"),
+      test_runs.run_id.as("run_id"),
+      test_runs.name.as("run_name")
+    ).
     from(tests).
     innerJoin(test_results, tests.id.eq(test_results.test_id)).
-    where(tests.id.lt(40)).
+    innerJoin(test_runs, test_results.run_id.eq(test_runs.run_id)).
     orderBy(tests.id).
+    orderBy(test_runs.run_id).
+    limit(40).
     exec();
 }
 
@@ -298,5 +307,13 @@ LovefieldService.prototype.selectParticularRun = function(runName) {
     select().
     from(test_runs).
     where(test_runs.name.eq(runName)).
+    exec();
+}
+
+LovefieldService.prototype.getRuns = function() {
+  var test_runs = this.test_runs;
+  return this.db_.
+    select().
+    from(test_runs).
     exec();
 }
