@@ -2,20 +2,29 @@
 <body>
 
 <div id="wptview" ng-app="wptview" ng-controller="wptviewController">
-  <input type="file" id="log_file" custom-on-change="uploadFile">
+  <form name="fileInput" novalidate>
+    <input name="logfile" type="file" id="log_file" custom-on-change="newFile">
+    <input name="run" type="text" ng-model="run_name" required>
+    <button ng-click="uploadFile()" ng-disabled="isFileEmpty || fileInput.$invalid">Crunch!</button>
+  </form>
   <br>
   <button ng-click="fillTable()" ng-disabled="isGenerateDisabled">Generate!</button>
   <button ng-click="clearTable()" ng-disabled="isGenerateDisabled">Clear!</button>
   <table ng-table="resultsTable" border="1">
     <tr>
-      <td>Test File</td>
-      <td>Result</td>
-      <td>Error Message</td>
+      <td rowspan="2">Test</td>
+      <td rowspan="2">Subtest</td>
+      <td colspan="2" ng-repeat="run in runs">{{ run.name }}</td>
+    </tr>
+    <tr>
+        <td ng-repeat-start="run in runs">Expected</td>
+        <td ng-repeat-end>Actual</td>
     </tr>
     <tr ng-repeat="result in results">
       <td>{{ result.test }}</td>
-      <td>{{ result.status }}</td>
-      <td>{{ result.message }}</td>
+      <td>{{ result.subtest }}</td>
+      <td ng-repeat-start="run in result.runs">PASS</td>
+      <td ng-repeat-end>{{ run.status }}</td>
     </tr>
   </table>
   <p>

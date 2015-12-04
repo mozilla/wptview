@@ -52,6 +52,11 @@ app.factory('ResultsModel',function() {
     return lovefield.deleteEntries();
   }
 
+  ResultsModel.prototype.getRuns = function() {
+    var lovefield = this.service;
+    return lovefield.getRuns();
+  }
+
   return ResultsModel;
 });
 
@@ -60,29 +65,75 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.warning_message = "";
   $scope.warnings = [];
   $scope.isGenerateDisabled = true;
+  $scope.isFileEmpty = true;
   var resultsModel = new ResultsModel();
-  $scope.uploadFile = function (evt) {
+  $scope.uploadFile = function () {
+    var evt = $scope.fileEvent;
     var file = evt.target.files[0];
-    resultsModel.addResultsFromLogs(file, "Firefox").then(function() {
+    resultsModel.addResultsFromLogs(file, $scope.run_name).then(function() {
       console.log("Results added!");
       $scope.isGenerateDisabled = false;
+      $scope.isFileEmpty = true;
       $scope.warning_message = $scope.warnings.length + " warnings found.";
       $scope.$apply();
     });
   }
   $scope.fillTable = function() {
-    resultsModel.getResults().then(function(results) {
-      console.log(results);
-      $scope.results = results;
-      $scope.$apply();
+    resultsModel.getRuns().then(function(runs) {
+      resultsModel.getResults().then(function(results) {
+        console.log(results);
+
+        $scope.runs = runs;
+        var final_results = $scope.organizeResults(results);
+        console.log(final_results);
+        $scope.results = final_results;
+        $scope.$apply();
+      });
     });
   }
+
+  $scope.organizeResults = function(results) {
+    var testMap = {};
+    results.forEach(function(result) {
+      if (!testMap.hasOwnProperty(result.test)) {
+        testMap[result.test]={};
+      }
+      if (!testMap[result.test].hasOwnProperty(result.title)) {
+        testMap[result.test][result.title]=[];
+      }
+      testMap[result.test][result.title].push({
+        'run_id': result.run_id,
+        'run_name': result.run_name,
+        'status': result.status,
+        'message': result.message
+      });
+    });
+    var final_results = [];
+    for (var test in testMap) {
+      for (var subtest in testMap[test]) {
+        final_results.push({
+          'test': test,
+          'subtest': subtest,
+          'runs': testMap[test][subtest]
+        });
+      }
+    }
+    return final_results;
+  }
+
   $scope.clearTable = function() {
     resultsModel.removeResults().then(function() {
       console.log("Table successfully cleared!");
       $scope.results = {};
+      $scope.runs = {};
       $scope.isGenerateDisabled = true;
       $scope.$apply();
     });
+  }
+
+  $scope.newFile = function(evt) {
+    $scope.isFileEmpty = false;
+    $scope.fileEvent = evt;
+    $scope.$apply();
   }
 });
