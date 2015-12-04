@@ -79,7 +79,7 @@ LovefieldService.prototype.buildSchema_ = function() {
 var testLogsRaw;
 
 LovefieldService.prototype.insertTestRuns = function(runName, testRuns) {
-  if (testRuns.length!=0) {
+  if (testRuns.length != 0) {
     return new Promise(function(resolve, reject) {
       resolve(testRuns);
     });
@@ -148,10 +148,7 @@ LovefieldService.prototype.insertTestResults = function(testLogsRaw, tests, test
   testLogsRaw.forEach(function(testLog) {
     if (testLog.action == "test_end") {
       // Duplicate found in same insert query array.
-      if (testResultsBeingAdded.hasOwnProperty(testLog.test)) {
-        // Notify UI as this is an anomaly.
-        // We have taken care of this in the insertTests function.
-      } else {
+      if (!testResultsBeingAdded.hasOwnProperty(testLog.test)) {
         // Add it to set of keys
         testResultsBeingAdded[testLog.test] = 1;
         var resultId = testIds[testLog.test];
@@ -234,12 +231,10 @@ LovefieldService.prototype.insertSubtestResults = function(testLogsRaw, subtests
   var subtestResultsBeingAdded = {};
   testLogsRaw.forEach(function(testLog) {
     if (testLog.action == "test_status") {
-      if (subtestResultsBeingAdded.hasOwnProperty(testLog.test) && subtestResultsBeingAdded[testLog.test].hasOwnProperty(testLog.subtest)) {
-        // Notify UI
-        // Taken care of in insertSubtests
-      } else {
-        if (!subtestResultsBeingAdded.hasOwnProperty(testLog.test))
+      if (!(subtestResultsBeingAdded.hasOwnProperty(testLog.test) && subtestResultsBeingAdded[testLog.test].hasOwnProperty(testLog.subtest))) {
+        if (!subtestResultsBeingAdded.hasOwnProperty(testLog.test)) {
           subtestResultsBeingAdded[testLog.test] = {};
+        }
         subtestResultsBeingAdded[testLog.test][testLog.subtest] = 1;
         var resultId = subtestIds[testLog.test][testLog.subtest];
         var row = test_results.createRow({
