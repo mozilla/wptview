@@ -30,3 +30,10 @@ function readFile(file) {
     reader.readAsText(file, "UTF-8");
   });
 }
+
+function updateWarnings(test, subtest) {
+    var scope = angular.element(document.getElementById("wptview")).scope();
+    scope.$apply(function() {
+        scope.warnings.push({test: test, subtest: subtest});
+    })
+}
