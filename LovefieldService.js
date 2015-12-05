@@ -56,6 +56,7 @@ LovefieldService.prototype.buildSchema_ = function() {
       addPrimaryKey(['id'], true);
   schemaBuilder.createTable('test_results').
       addColumn('result_id', lf.Type.INTEGER).
+      addColumn('expected', lf.Type.STRING).
       addColumn('status', lf.Type.STRING).
       addColumn('message', lf.Type.STRING).
       addColumn('test_id', lf.Type.INTEGER).
@@ -155,7 +156,8 @@ LovefieldService.prototype.insertTestResults = function(testLogsRaw, tests, test
           'status': testLog.status,
           'message': testLog.message,
           'test_id': resultId,
-          'run_id': testRunId
+          'run_id': testRunId,
+          'expected': testLog.hasOwnProperty("expected") ? testLog.expected : "PASS"
         });
         testResultsRows.push(row);
       }
@@ -240,7 +242,8 @@ LovefieldService.prototype.insertSubtestResults = function(testLogsRaw, subtests
           'status': testLog.status,
           'message': testLog.message,
           'test_id': resultId,
-          'run_id': testRunId
+          'run_id': testRunId,
+          'expected': testLog.hasOwnProperty("expected") ? testLog.expected : "PASS"
         });
         subtestResultsRows.push(row);
       }
@@ -280,6 +283,7 @@ LovefieldService.prototype.selectNTests = function() {
       tests.test.as("test"),
       test_results.message.as("message"),
       test_results.status.as("status"),
+      test_results.expected.as("expected"),
       tests.title.as("title"),
       test_runs.run_id.as("run_id"),
       test_runs.name.as("run_name")
