@@ -121,6 +121,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
         'run_id': result.run_id,
         'run_name': result.run_name,
         'status': result.status,
+        'expected': result.expected,
         'message': result.message
       });
     });

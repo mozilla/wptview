@@ -23,7 +23,7 @@
     <tr ng-repeat="result in results">
       <td>{{ result.test }}</td>
       <td>{{ result.subtest }}</td>
-      <td ng-repeat-start="run in result.runs">PASS</td>
+      <td ng-repeat-start="run in result.runs">{{ run.expected }}</td>
       <td ng-repeat-end>{{ run.status }}</td>
     </tr>
   </table>
