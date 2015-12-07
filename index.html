@@ -6,10 +6,28 @@
     <input name="logfile" type="file" id="log_file" custom-on-change="newFile">
     <input name="run" type="text" ng-model="run_name" required>
     <button ng-click="uploadFile()" ng-disabled="isFileEmpty || fileInput.$invalid">Crunch!</button>
+    <button ng-click="clearTable()" ng-disabled="isGenerateDisabled">Clear!</button>
   </form>
   <br>
-  <button ng-click="fillTable()" ng-disabled="isGenerateDisabled">Generate!</button>
-  <button ng-click="clearTable()" ng-disabled="isGenerateDisabled">Clear!</button>
+
+  <form ng-hide="isGenerateDisabled">
+    <select ng-model="filter.run">
+      <option ng-repeat="run in runs" value="{{ run.name }}">{{ run.name }}</option>
+    </select>
+    <input type="checkbox" ng-model="filter.negate">negate</input>
+    <select ng-model="filter.status">
+      <option value="PASS">PASS</option>
+      <option value="SKIP">SKIP</option>
+      <option value="ERROR">ERROR</option>
+      <option value="FAIL">FAIL</option>
+      <option value="OK">OK</option>
+      <option value="TIMEOUT">TIMEOUT</option>
+      <option value="NOTRUN">NOTRUN</option>
+      <option value="CRASH">CRASH</option>
+    </select>
+    <button ng-click="fillTable()" ng-disabled="isGenerateDisabled">Generate!</button>
+  </form>
+
   <table ng-table="resultsTable" border="1">
     <tr>
       <td rowspan="2">Test</td>
