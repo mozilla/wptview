@@ -297,6 +297,82 @@ LovefieldService.prototype.selectNTests = function() {
     exec();
 }
 
+LovefieldService.prototype.selectFilteredResults = function(filter) {
+  var lovefield = this;
+  var tests = this.tests;
+  var test_results = this.test_results;
+  var test_runs = this.test_runs;
+
+  if (!filter.negate) {
+    var q1 = lovefield.db_.
+      select(tests.id.as("test_id")).
+      from(tests).
+      innerJoin(test_results, tests.id.eq(test_results.test_id)).
+      innerJoin(test_runs, test_results.run_id.eq(test_runs.run_id)).
+      where(lf.op.and(
+        test_runs.name.eq(filter.run),
+        test_results.status.eq(filter.status)));
+
+    return q1.exec().then(function(test_ids) {
+      var test_list = [];
+      test_ids.forEach(function(test) {
+        test_list.push(test.test_id);
+      });
+      return lovefield.db_.
+        select(
+          tests.test.as("test"),
+          test_results.message.as("message"),
+          test_results.status.as("status"),
+          test_results.expected.as("expected"),
+          tests.title.as("title"),
+          test_runs.run_id.as("run_id"),
+          test_runs.name.as("run_name")
+        ).
+        from(tests).
+        innerJoin(test_results, tests.id.eq(test_results.test_id)).
+        innerJoin(test_runs, test_results.run_id.eq(test_runs.run_id)).
+        where(tests.id.in(test_list)).
+        orderBy(tests.id).
+        orderBy(test_runs.run_id).
+        exec();
+    });
+  }
+  else {
+    var q1 = lovefield.db_.
+      select(tests.id.as("test_id")).
+      from(tests).
+      innerJoin(test_results, tests.id.eq(test_results.test_id)).
+      innerJoin(test_runs, test_results.run_id.eq(test_runs.run_id)).
+      where(lf.op.and(
+        test_runs.name.eq(filter.run),
+        test_results.status.neq(filter.status)));
+
+    return q1.exec().then(function(test_ids) {
+      var test_list = [];
+      test_ids.forEach(function(test) {
+        test_list.push(test.test_id);
+      });
+      return lovefield.db_.
+        select(
+          tests.test.as("test"),
+          test_results.message.as("message"),
+          test_results.status.as("status"),
+          test_results.expected.as("expected"),
+          tests.title.as("title"),
+          test_runs.run_id.as("run_id"),
+          test_runs.name.as("run_name")
+        ).
+        from(tests).
+        innerJoin(test_results, tests.id.eq(test_results.test_id)).
+        innerJoin(test_runs, test_results.run_id.eq(test_runs.run_id)).
+        where(tests.id.in(test_list)).
+        orderBy(tests.id).
+        orderBy(test_runs.run_id).
+        exec();
+    });
+  }
+}
+
 LovefieldService.prototype.deleteEntries = function() {
   var q1 = this.db_.delete().from(this.tests);
   var q2 = this.db_.delete().from(this.test_results);
