@@ -42,9 +42,9 @@ app.factory('ResultsModel',function() {
       .then(function(subtests) {return lovefield.insertSubtestResults(resultData, subtests, testRunData)})
   }
 
-  ResultsModel.prototype.getResults = function() {
+  ResultsModel.prototype.getResults = function(filter) {
     var lovefield = this.service;
-    return lovefield.selectNTests();
+    return lovefield.selectFilteredResults(filter);
   }
 
   ResultsModel.prototype.removeResults = function() {
@@ -66,12 +66,21 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.warnings = [];
   $scope.isGenerateDisabled = true;
   $scope.isFileEmpty = true;
+  $scope.filter = {
+    "negate": false,
+    "run": "",
+    "status": ""
+  }
   var resultsModel = new ResultsModel();
   $scope.uploadFile = function () {
     var evt = $scope.fileEvent;
     var file = evt.target.files[0];
-    resultsModel.addResultsFromLogs(file, $scope.run_name).then(function() {
+    resultsModel.addResultsFromLogs(file, $scope.run_name)
+    .then(() => resultsModel.getRuns())
+    .then((runs) => {
+      $scope.runs = runs;
       console.log("Results added!");
+      console.log($scope.runs);
       $scope.isGenerateDisabled = false;
       $scope.isFileEmpty = true;
       $scope.warning_message = $scope.warnings.length + " warnings found.";
@@ -80,10 +89,8 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   }
 
   $scope.fillTable = function() {
-    resultsModel.getRuns()
-    .then((runs) => $scope.runs = runs)
-    .then(() => resultsModel.getResults())
-    .then((results) => {
+    console.log($scope.filter);
+    resultsModel.getResults($scope.filter).then(function(results) {
       console.log(results);
       var finalResults = organizeResults(results);
       console.log(finalResults);
@@ -138,3 +145,8 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     return finalResults;
   }
 });
+
+// TODO:- Add support to see error message, if any
+// TODO:- Add a loading dialog while logs are ingested
+// TODO:- Fixed width for table columns
+// TODO:- Change conditions to disable "crunch" button
