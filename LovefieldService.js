@@ -304,6 +304,7 @@ LovefieldService.prototype.selectFilteredResults = function(filter) {
   var test_runs = this.test_runs;
   var status_op = filter.negate ? test_results.status.neq(filter.status) : test_results.status.eq(filter.status);
 
+  // The first query is used to select tests based on the filter
   var q1 = lovefield.db_.
     select(tests.id.as("test_id")).
     from(tests).
@@ -319,6 +320,8 @@ LovefieldService.prototype.selectFilteredResults = function(filter) {
     test_ids.forEach(function(test) {
       test_list.push(test.test_id);
     });
+    // We need an additional query to select test results for ALL runs
+    // for the tests filtered by q1.
     return lovefield.db_.
       select(
         tests.test.as("test"),
