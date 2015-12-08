@@ -316,12 +316,10 @@ LovefieldService.prototype.selectFilteredResults = function(filter) {
 
   return q1.exec()
   .then((test_ids) => {
-    var test_list = [];
-    test_ids.forEach(function(test) {
-      test_list.push(test.test_id);
-    });
+    var test_list = test_ids.map((test) => test.test_id);
     // We need an additional query to select test results for ALL runs
-    // for the tests filtered by q1.
+    // for the tests filtered by q1. We need this unusual approach as
+    // lovefield doesn't support subqueries.
     return lovefield.db_.
       select(
         tests.test.as("test"),
