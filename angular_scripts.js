@@ -22,29 +22,29 @@ app.factory('ResultsModel',function() {
     var testData = null;
     var testRunData = null;
     return readFile(file)
-      .then(function(logData) {return logCruncher(logData, testsFilter)})
-      .then(function(data) {resultData = data})
-      .then(function() {return lovefield.getDbConnection()})
+      .then((logData) => {return logCruncher(logData, testsFilter)})
+      .then((data) => {resultData = data})
+      .then(() => {return lovefield.getDbConnection()})
       // Filling the test_runs table
-      .then(function() {return lovefield.selectParticularRun(runName)})
-      .then(function(testRuns) {return lovefield.insertTestRuns(runName, testRuns)})
+      .then(() => {return lovefield.selectParticularRun(runName)})
+      .then((testRuns) => {return lovefield.insertTestRuns(runName, testRuns)})
       // Selecting current tests table, adding extra entries only
-      .then(function(testRuns) {testRunData = testRuns; return lovefield.selectAllParentTests()})
-      .then(function(parentTests) {return lovefield.insertTests(resultData, parentTests)})
-      .then(function() {return lovefield.selectAllParentTests()})
+      .then((testRuns) => {testRunData = testRuns; return lovefield.selectAllParentTests()})
+      .then((parentTests) => {return lovefield.insertTests(resultData, parentTests)})
+      .then(() => {return lovefield.selectAllParentTests()})
       // populating results table with parent test results
-      .then(function(tests) {testData = tests; return lovefield.insertTestResults(resultData, testData, testRunData)})
+      .then((tests) => {testData = tests; return lovefield.insertTestResults(resultData, testData, testRunData)})
       // add subtests to tests table
-      .then(function() {return lovefield.selectAllSubtests()})
-      .then(function(subtests) {return lovefield.insertSubtests(resultData, testData, subtests)})
-      .then(function() {return lovefield.selectAllSubtests()})
+      .then(() => {return lovefield.selectAllSubtests()})
+      .then((subtests) => {return lovefield.insertSubtests(resultData, testData, subtests)})
+      .then(() => {return lovefield.selectAllSubtests()})
       // adding subtest results
-      .then(function(subtests) {return lovefield.insertSubtestResults(resultData, subtests, testRunData)})
+      .then((subtests) => {return lovefield.insertSubtestResults(resultData, subtests, testRunData)})
   }
 
-  ResultsModel.prototype.getResults = function() {
+  ResultsModel.prototype.getResults = function(filter) {
     var lovefield = this.service;
-    return lovefield.selectNTests();
+    return lovefield.selectFilteredResults(filter);
   }
 
   ResultsModel.prototype.removeResults = function() {
@@ -66,12 +66,21 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.warnings = [];
   $scope.isGenerateDisabled = true;
   $scope.isFileEmpty = true;
+  $scope.filter = {
+    "negate": false,
+    "run": "",
+    "status": ""
+  }
   var resultsModel = new ResultsModel();
   $scope.uploadFile = function () {
     var evt = $scope.fileEvent;
     var file = evt.target.files[0];
-    resultsModel.addResultsFromLogs(file, $scope.run_name).then(function() {
+    resultsModel.addResultsFromLogs(file, $scope.run_name)
+    .then(() => resultsModel.getRuns())
+    .then((runs) => {
+      $scope.runs = runs;
       console.log("Results added!");
+      console.log($scope.runs);
       $scope.isGenerateDisabled = false;
       $scope.isFileEmpty = true;
       $scope.warning_message = $scope.warnings.length + " warnings found.";
@@ -80,9 +89,8 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   }
 
   $scope.fillTable = function() {
-    resultsModel.getRuns()
-    .then((runs) => $scope.runs = runs)
-    .then(() => resultsModel.getResults())
+    console.log($scope.filter);
+    resultsModel.getResults($scope.filter)
     .then((results) => {
       console.log(results);
       var finalResults = organizeResults(results);
@@ -93,7 +101,8 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   }
 
   $scope.clearTable = function() {
-    resultsModel.removeResults().then(function() {
+    resultsModel.removeResults()
+    .then(() => {
       console.log("Table successfully cleared!");
       $scope.results = {};
       $scope.runs = {};
