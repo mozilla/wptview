@@ -302,21 +302,43 @@ LovefieldService.prototype.selectFilteredResults = function(filter) {
   var tests = this.tests;
   var test_results = this.test_results;
   var test_runs = this.test_runs;
-  var status_op = filter.negate ? test_results.status.neq(filter.status) : test_results.status.eq(filter.status);
+  var queries = [];
+  // The queries is used to select tests based on the filter
+  for (var key in filter) {
+    var constraint = filter[key];
+    if (!constraint.hasOwnProperty('negate')) {
+      constraint['negate'] = false;
+    }
+    var status_op = constraint.negate ? test_results.status.neq(constraint.status) : test_results.status.eq(constraint.status);
+    queries.push(lovefield.db_.
+      select(tests.id.as("test_id")).
+      from(tests).
+      innerJoin(test_results, tests.id.eq(test_results.test_id)).
+      innerJoin(test_runs, test_results.run_id.eq(test_runs.run_id)).
+      where(lf.op.and(
+        test_runs.name.eq(constraint.run),
+        status_op)).
+      exec());
+  }
 
-  // The first query is used to select tests based on the filter
-  var q1 = lovefield.db_.
-    select(tests.id.as("test_id")).
-    from(tests).
-    innerJoin(test_results, tests.id.eq(test_results.test_id)).
-    innerJoin(test_runs, test_results.run_id.eq(test_runs.run_id)).
-    where(lf.op.and(
-      test_runs.name.eq(filter.run),
-      status_op));
-
-  return q1.exec()
-  .then((test_ids) => {
-    var test_list = test_ids.map((test) => test.test_id);
+  return Promise.all(queries)
+  .then((test_ids_list) => {
+    var test_list = [];
+    test_ids_list.forEach(function(test_ids) {
+      test_list.push(test_ids.map((test) => test.test_id));
+    });
+    console.log(test_list);
+    var whereCondition = null;
+    if (test_list.length == 1) {
+      whereCondition = tests.id.in(test_list[0]);
+    } else {
+      // Could use lf.op.and.apply() here but unsure about
+      // what to send as "this" (first parameter in apply() )
+      whereCondition = lf.op.and(tests.id.in(test_list[0]), tests.id.in(test_list[1]));
+      for (var i = 2; i < test_list.length; i++) {
+        whereCondition = lf.op.and(tests.id.in(test_list[i]), whereCondition);
+      }
+    }
     // We need an additional query to select test results for ALL runs
     // for the tests filtered by q1. We need this unusual approach as
     // lovefield doesn't support subqueries.
@@ -333,9 +355,10 @@ LovefieldService.prototype.selectFilteredResults = function(filter) {
       from(tests).
       innerJoin(test_results, tests.id.eq(test_results.test_id)).
       innerJoin(test_runs, test_results.run_id.eq(test_runs.run_id)).
-      where(tests.id.in(test_list)).
+      where(whereCondition).
       orderBy(tests.id).
       orderBy(test_runs.run_id).
+      limit(50).
       exec();
   });
 }
