@@ -67,7 +67,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.isGenerateDisabled = true;
   $scope.isFileEmpty = true;
   $scope.numConstraints = 0;
-  $scope.filter = {};
+  $scope.filter = [];
   var resultsModel = new ResultsModel();
 
   $scope.range = function(min, max, step) {
@@ -128,7 +128,8 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   }
 
   $scope.deleteConstraint = function() {
-    delete $scope.filter["constraint"+($scope.numConstraints-1)];
+    //delete $scope.filter["constraint" + ($scope.numConstraints - 1)];
+    $scope.filter.pop();
     $scope.numConstraints -= 1;
   }
 
