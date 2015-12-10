@@ -128,7 +128,6 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   }
 
   $scope.deleteConstraint = function() {
-    //delete $scope.filter["constraint" + ($scope.numConstraints - 1)];
     $scope.filter.pop();
     $scope.numConstraints -= 1;
   }
@@ -143,15 +142,21 @@ app.controller('wptviewController', function($scope, ResultsModel) {
         testMap[result.test][result.title] = [];
         for (var i = 0; i < $scope.runs.length; i++) {
           testMap[result.test][result.title].push({
-            'run_id': i+1,
-            'run_name': "",
+            'run_id': $scope.runs[i].run_id,
+            'run_name': $scope.runs[i].run_name,
             'status': "",
             'expected': "",
             'message': ""
           });
         }
       }
-      testMap[result.test][result.title][result.run_id-1] = {
+      var run_index = 0;
+      for (var i = 0; i < $scope.runs.length; i++) {
+        if (result.run_id == testMap[result.test][result.title][i]['run_id']) {
+          run_index = i;
+        }
+      }
+      testMap[result.test][result.title][run_index] = {
         'run_id': result.run_id,
         'run_name': result.run_name,
         'status': result.status,
