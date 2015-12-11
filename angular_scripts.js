@@ -42,9 +42,9 @@ app.factory('ResultsModel',function() {
       .then((subtests) => {return lovefield.insertSubtestResults(resultData, subtests, testRunData)})
   }
 
-  ResultsModel.prototype.getResults = function(filter) {
+  ResultsModel.prototype.getResults = function(filter, pathFilter) {
     var lovefield = this.service;
-    return lovefield.selectFilteredResults(filter);
+    return lovefield.selectFilteredResults(filter, pathFilter);
   }
 
   ResultsModel.prototype.removeResults = function() {
@@ -67,6 +67,10 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.isGenerateDisabled = true;
   $scope.isFileEmpty = true;
   $scope.filter = [];
+  $scope.pathFilter = {
+    choice: "starts with",
+    path: ""
+  };
   var runIndex = {};
   var resultsModel = new ResultsModel();
 
@@ -99,8 +103,9 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   }
 
   $scope.fillTable = function() {
+    console.log($scope.pathFilter);
     console.log($scope.filter);
-    resultsModel.getResults($scope.filter)
+    resultsModel.getResults($scope.filter, $scope.pathFilter)
     .then((results) => {
       var finalResults = organizeResults(results);
       console.log(finalResults);
@@ -115,6 +120,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
       console.log("Table successfully cleared!");
       $scope.results = {};
       $scope.runs = {};
+      $scope.warnings = [];
       $scope.isGenerateDisabled = true;
       $scope.$apply();
     });
@@ -129,7 +135,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.addConstraint = function() {
     $scope.filter.push({
       run : "",
-      negate : false,
+      negate : "is",
       status : ""
     });
   }

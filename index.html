@@ -10,14 +10,28 @@
   </form>
   <br>
   <div ng-hide="isGenerateDisabled">
+
+    Path
+    <select ng-model="pathFilter.choice">
+      <option value="starts with">starts with</option>
+      <option value="ends with">ends with</option>
+      <option value="contains">contains</option>
+      <option value="does not contain">does not contain</option>
+    </select>
+    <input type="text" ng-model="pathFilter.path">
+    <br><br><br>
+
     <button ng-click="addConstraint()">Add</button>
     <button ng-click="deleteConstraint()">Delete</button>
-    <br>
+    <br><br>
     <form ng-repeat="i in range(1, filter.length+1)">
       <select ng-model="filter[$index].run">
         <option ng-repeat="run in runs" value="{{ run.name }}">{{ run.name }}</option>
       </select>
-      <input type="checkbox" ng-model="filter[$index].negate">negate</input>
+      <select ng-model="filter[$index].negate">
+        <option value="is">is</option>
+        <option value="is not">is not</option>
+      </select>
       <select ng-model="filter[$index].status">
         <option value="PASS">PASS</option>
         <option value="SKIP">SKIP</option>

@@ -298,7 +298,7 @@ LovefieldService.prototype.selectNTests = function() {
     exec();
 }
 
-LovefieldService.prototype.selectFilteredResults = function(filters) {
+LovefieldService.prototype.selectFilteredResults = function(filters, pathFilter) {
   var lovefield = this;
   var tests = this.tests;
   var test_results = this.test_results;
@@ -326,13 +326,39 @@ LovefieldService.prototype.selectFilteredResults = function(filters) {
   // WHERE clause
   var whereConditions = [];
   filters.forEach((constraint, i) => {
-    constraint['negate'] = constraint.hasOwnProperty('negate') ? constraint['negate'] : false;
     whereConditions.push(runs[i].name.eq(constraint.run));
-    var status_op = constraint.negate ? results[i].status.neq(constraint.status) : results[i].status.eq(constraint.status);
+    var status_op;
+    if (constraint.negate == "is") {
+      status_op = results[i].status.eq(constraint.status);
+    } else if (constraint.negate == "is not") {
+      status_op = results[i].status.neq(constraint.status);
+    }
     whereConditions.push(status_op);
   });
-  var whereClause = lf.op.and.apply(lf.op.and, whereConditions);
-  query = query.where(whereClause);
+
+  // working on path filter
+  pathFilter.path = pathFilter.path.replace("\\", "/");
+  var path_regex = escapeRegExp(pathFilter.path);
+  if (pathFilter.choice == "starts with") {
+    if (pathFilter.path.charAt(0) != "/") {
+      pathFilter.path = "/" + pathFilter.path;
+      path_regex = escapeRegExp(pathFilter.path);
+    }
+    path_regex = "^" + path_regex;
+  } else if (pathFilter.choice == "ends with") {
+    path_regex = path_regex + "$";
+  }
+  path_regex = new RegExp(path_regex, 'i');
+  if (pathFilter.choice == "does not contain") {
+    whereConditions.push(lf.op.not(tests.test.match(path_regex)));
+  } else {
+    whereConditions.push(tests.test.match(path_regex));
+  }
+  console.log(path_regex.toString());
+  if (filters.length > 0 || pathFilter.path != "") {
+    var whereClause = lf.op.and.apply(lf.op.and, whereConditions);
+    query = query.where(whereClause);
+  }
 
   return query.exec()
   .then((test_ids) => {
