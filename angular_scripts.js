@@ -67,6 +67,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.isGenerateDisabled = true;
   $scope.isFileEmpty = true;
   $scope.filter = [];
+  var runIndex = [];
   var resultsModel = new ResultsModel();
 
   $scope.range = function(min, max, step) {
@@ -87,6 +88,9 @@ app.controller('wptviewController', function($scope, ResultsModel) {
       $scope.runs = runs;
       console.log("Results added!");
       console.log($scope.runs);
+      $scope.runs.forEach((run, i) => {
+        runIndex[run.run_id] = i;
+      });
       $scope.isGenerateDisabled = false;
       $scope.isFileEmpty = true;
       $scope.warning_message = $scope.warnings.length + " warnings found.";
@@ -152,13 +156,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
           });
         }
       }
-      var run_index = 0;
-      for (var i = 0; i < $scope.runs.length; i++) {
-        if (result.run_id == testMap[result.test][result.title][i]['run_id']) {
-          run_index = i;
-        }
-      }
-      testMap[result.test][result.title][run_index] = {
+      testMap[result.test][result.title][runIndex[result.run_id]] = {
         'run_id': result.run_id,
         'run_name': result.run_name,
         'status': result.status,

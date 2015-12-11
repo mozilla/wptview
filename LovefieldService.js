@@ -325,15 +325,12 @@ LovefieldService.prototype.selectFilteredResults = function(filters) {
 
   // WHERE clause
   var whereConditions = [];
-  // QUESTION :- As we have 2 different conditions being added to the WHERE
-  // clause here, two map() functions would be needed. Should I do that?
-  for (var i = 0; i < filters.length; i++) {
-    var constraint = filters[i];
+  filters.forEach((constraint, i) => {
     constraint['negate'] = constraint.hasOwnProperty('negate') ? constraint['negate'] : false;
     whereConditions.push(runs[i].name.eq(constraint.run));
     var status_op = constraint.negate ? results[i].status.neq(constraint.status) : results[i].status.eq(constraint.status);
     whereConditions.push(status_op);
-  }
+  });
   var whereClause = lf.op.and.apply(lf.op.and, whereConditions);
   query = query.where(whereClause);
 
