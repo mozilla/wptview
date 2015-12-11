@@ -62,6 +62,7 @@ LovefieldService.prototype.buildSchema_ = function() {
       addColumn('test_id', lf.Type.INTEGER).
       addColumn('run_id', lf.Type.INTEGER).
       addPrimaryKey(['result_id'], true).
+      addNullable(['message']).
       addUnique("unique_fk", ['run_id', 'test_id']).
       addForeignKey('fk_test_id', {
         local: 'test_id',
@@ -297,7 +298,7 @@ LovefieldService.prototype.selectNTests = function() {
     exec();
 }
 
-LovefieldService.prototype.selectFilteredResults = function(filter) {
+LovefieldService.prototype.selectFilteredResults = function(filters) {
   var lovefield = this;
   var tests = this.tests;
   var test_results = this.test_results;
@@ -306,28 +307,29 @@ LovefieldService.prototype.selectFilteredResults = function(filter) {
   var query = lovefield.db_.
     select(tests.id.as("test_id")).
     from(tests);
-  var results = [];
   var runs = [];
 
   // JOINs with results table
-  for (var i = 0; i < filter.length; i++) {
-    results.push(this.test_results.as('results' + i));
-    query = query.innerJoin(results[i], tests.id.eq(results[i].test_id));
-  }
+  var results = filters.map((filter, i) => {
+    var alias = this.test_results.as('results' + i);
+    query = query.leftOuterJoin(alias, tests.id.eq(alias.test_id));
+    return alias;
+  });
 
   // JOINs with runs table
-  for (var i = 0; i < filter.length; i++) {
-    runs.push(this.test_runs.as('runs'+i));
-    query = query.innerJoin(runs[i], results[i].run_id.eq(runs[i].run_id));
-  }
+  var runs = filters.map((filter, i) => {
+    var alias = this.test_runs.as('runs' + i);
+    query = query.innerJoin(alias, results[i].run_id.eq(alias.run_id));
+    return alias;
+  });
 
   // WHERE clause
   var whereConditions = [];
-  for (var i = 0; i < filter.length; i++) {
-    var constraint = filter[i];
-    if (!constraint.hasOwnProperty('negate')) {
-      constraint['negate'] = false;
-    }
+  // QUESTION :- As we have 2 different conditions being added to the WHERE
+  // clause here, two map() functions would be needed. Should I do that?
+  for (var i = 0; i < filters.length; i++) {
+    var constraint = filters[i];
+    constraint['negate'] = constraint.hasOwnProperty('negate') ? constraint['negate'] : false;
     whereConditions.push(runs[i].name.eq(constraint.run));
     var status_op = constraint.negate ? results[i].status.neq(constraint.status) : results[i].status.eq(constraint.status);
     whereConditions.push(status_op);
@@ -337,8 +339,7 @@ LovefieldService.prototype.selectFilteredResults = function(filter) {
 
   return query.exec()
   .then((test_ids) => {
-    var test_list = [];
-    test_list = test_ids.map((test) => test.test_id);
+    var test_list = test_ids.map((test) => test.test_id);
     console.log(test_list);
     // We need an additional query to select test results for ALL runs
     // for the tests filtered by q1. We need this unusual approach as
@@ -365,8 +366,8 @@ LovefieldService.prototype.selectFilteredResults = function(filter) {
 }
 
 LovefieldService.prototype.deleteEntries = function() {
-  var q1 = this.db_.delete().from(this.tests);
-  var q2 = this.db_.delete().from(this.test_results);
+  var q1 = this.db_.delete().from(this.test_results);
+  var q2 = this.db_.delete().from(this.tests);
   var q3 = this.db_.delete().from(this.test_runs);
   var tx = this.db_.createTransaction();
   return tx.exec([q1, q2, q3]);

@@ -66,7 +66,6 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.warnings = [];
   $scope.isGenerateDisabled = true;
   $scope.isFileEmpty = true;
-  $scope.numConstraints = 0;
   $scope.filter = [];
   var resultsModel = new ResultsModel();
 
@@ -124,12 +123,15 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   }
 
   $scope.addConstraint = function() {
-    $scope.numConstraints += 1;
+    $scope.filter.push({
+      run : "",
+      negate : false,
+      status : ""
+    });
   }
 
   $scope.deleteConstraint = function() {
     $scope.filter.pop();
-    $scope.numConstraints -= 1;
   }
 
   function organizeResults(results) {

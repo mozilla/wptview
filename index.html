@@ -13,7 +13,7 @@
     <button ng-click="addConstraint()">Add</button>
     <button ng-click="deleteConstraint()">Delete</button>
     <br>
-    <form ng-repeat="i in range(1, numConstraints+1)">
+    <form ng-repeat="i in range(1, filter.length+1)">
       <select ng-model="filter[$index].run">
         <option ng-repeat="run in runs" value="{{ run.name }}">{{ run.name }}</option>
       </select>
