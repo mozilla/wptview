@@ -37,3 +37,8 @@ function updateWarnings(test, subtest) {
         scope.warnings.push({test: test, subtest: subtest});
     })
 }
+
+// http://stackoverflow.com/questions/3446170/escape-string-for-use-in-javascript-regex/6969486#6969486
+function escapeRegExp(str) {
+  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+}
