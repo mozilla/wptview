@@ -151,6 +151,9 @@ app.controller('wptviewController', function($scope, ResultsModel) {
         testMap[result.test] = {};
       }
       if (!testMap[result.test].hasOwnProperty(result.title)) {
+        if (result.title === undefined) {
+          result.title = "";
+        }
         testMap[result.test][result.title] = [];
         for (var i = 0; i < $scope.runs.length; i++) {
           testMap[result.test][result.title].push({
@@ -175,7 +178,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
       for (var subtest in testMap[test]) {
         finalResults.push({
           'test': test,
-          'subtest': subtest !== "undefined" ? subtest : "",
+          'subtest': subtest,
           'runs': testMap[test][subtest]
         });
       }
