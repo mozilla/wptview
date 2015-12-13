@@ -175,7 +175,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
       for (var subtest in testMap[test]) {
         finalResults.push({
           'test': test,
-          'subtest': subtest,
+          'subtest': subtest !== "undefined" ? subtest : "",
           'runs': testMap[test][subtest]
         });
       }
