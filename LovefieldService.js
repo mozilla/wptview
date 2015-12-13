@@ -337,29 +337,37 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
   });
 
   // working on path filter
-  var pathOrConditions = [];
+  var pathOrConditions = {
+    include: [],
+    exclude: []
+  }
   pathFilters.forEach((pathFilter) => {
     pathFilter.path = pathFilter.path.replace("\\", "/");
     var path_regex = escapeRegExp(pathFilter.path);
-    if (pathFilter.choice == "starts with") {
+    if (pathFilter.choice.indexOf("start") != -1) {
       if (pathFilter.path.charAt(0) != "/") {
         path_regex = escapeRegExp("/"+pathFilter.path);
       }
       path_regex = "^" + path_regex;
-    } else if (pathFilter.choice == "ends with") {
+    } else if (pathFilter.choice.indexOf("end") != -1) {
       path_regex = path_regex + "$";
     }
     path_regex = new RegExp(path_regex, 'i');
-    if (pathFilter.choice == "does not contain") {
-      pathOrConditions.push(lf.op.not(tests.test.match(path_regex)));
+    if (pathFilter.choice.indexOf("does not") == -1) {
+      pathOrConditions.include.push(tests.test.match(path_regex));
     } else {
-      pathOrConditions.push(tests.test.match(path_regex));
+      pathOrConditions.exclude.push(tests.test.match(path_regex));
     }
     console.log(path_regex.toString());
   });
-  if (pathOrConditions.length) {
-    whereConditions.push(lf.op.or.apply(lf.op.or, pathOrConditions));
+
+  if (pathOrConditions.include.length) {
+    whereConditions.push(lf.op.or.apply(lf.op.or, pathOrConditions.include));
   }
+  if (pathOrConditions.exclude.length) {
+    whereConditions.push(lf.op.not(lf.op.or.apply(lf.op.or, pathOrConditions.exclude)));
+  }
+
   if (whereConditions.length) {
     var whereClause = lf.op.and.apply(lf.op.and, whereConditions);
     query = query.where(whereClause);
