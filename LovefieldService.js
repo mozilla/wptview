@@ -298,7 +298,7 @@ LovefieldService.prototype.selectNTests = function() {
     exec();
 }
 
-LovefieldService.prototype.selectFilteredResults = function(filters, pathFilter) {
+LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters) {
   var lovefield = this;
   var tests = this.tests;
   var test_results = this.test_results;
@@ -337,23 +337,29 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilter)
   });
 
   // working on path filter
-  pathFilter.path = pathFilter.path.replace("\\", "/");
-  var path_regex = escapeRegExp(pathFilter.path);
-  if (pathFilter.choice == "starts with") {
-    if (pathFilter.path.charAt(0) != "/") {
-      path_regex = escapeRegExp("/"+pathFilter.path);
+  var pathOrConditions = [];
+  pathFilters.forEach((pathFilter) => {
+    pathFilter.path = pathFilter.path.replace("\\", "/");
+    var path_regex = escapeRegExp(pathFilter.path);
+    if (pathFilter.choice == "starts with") {
+      if (pathFilter.path.charAt(0) != "/") {
+        path_regex = escapeRegExp("/"+pathFilter.path);
+      }
+      path_regex = "^" + path_regex;
+    } else if (pathFilter.choice == "ends with") {
+      path_regex = path_regex + "$";
     }
-    path_regex = "^" + path_regex;
-  } else if (pathFilter.choice == "ends with") {
-    path_regex = path_regex + "$";
+    path_regex = new RegExp(path_regex, 'i');
+    if (pathFilter.choice == "does not contain") {
+      pathOrConditions.push(lf.op.not(tests.test.match(path_regex)));
+    } else {
+      pathOrConditions.push(tests.test.match(path_regex));
+    }
+    console.log(path_regex.toString());
+  });
+  if (pathOrConditions.length) {
+    whereConditions.push(lf.op.or.apply(lf.op.or, pathOrConditions));
   }
-  path_regex = new RegExp(path_regex, 'i');
-  if (pathFilter.choice == "does not contain") {
-    whereConditions.push(lf.op.not(tests.test.match(path_regex)));
-  } else {
-    whereConditions.push(tests.test.match(path_regex));
-  }
-  console.log(path_regex.toString());
   if (whereConditions.length) {
     var whereClause = lf.op.and.apply(lf.op.and, whereConditions);
     query = query.where(whereClause);
