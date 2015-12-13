@@ -147,13 +147,13 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   function organizeResults(results) {
     var testMap = {};
     results.forEach(function(result) {
+      if (result.title === undefined) {
+        result.title = "";
+      }
       if (!testMap.hasOwnProperty(result.test)) {
         testMap[result.test] = {};
       }
       if (!testMap[result.test].hasOwnProperty(result.title)) {
-        if (result.title === undefined) {
-          result.title = "";
-        }
         testMap[result.test][result.title] = [];
         for (var i = 0; i < $scope.runs.length; i++) {
           testMap[result.test][result.title].push({
