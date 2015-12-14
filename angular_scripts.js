@@ -67,10 +67,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.isGenerateDisabled = true;
   $scope.isFileEmpty = true;
   $scope.filter = [];
-  $scope.pathFilter = {
-    choice: "starts with",
-    path: ""
-  };
+  $scope.pathFilter = [];
   var runIndex = {};
   var resultsModel = new ResultsModel();
 
@@ -142,6 +139,17 @@ app.controller('wptviewController', function($scope, ResultsModel) {
 
   $scope.deleteConstraint = function() {
     $scope.filter.pop();
+  }
+
+  $scope.addPath = function() {
+    $scope.pathFilter.push({
+      choice: "include:start",
+      path: ""
+    });
+  }
+
+  $scope.deletePath = function() {
+    $scope.pathFilter.pop();
   }
 
   function organizeResults(results) {
