@@ -143,7 +143,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
 
   $scope.addPath = function() {
     $scope.pathFilter.push({
-      choice: "starts with",
+      choice: "include:start",
       path: ""
     });
   }

@@ -344,16 +344,17 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
   pathFilters.forEach((pathFilter) => {
     pathFilter.path = pathFilter.path.replace("\\", "/");
     var path_regex = escapeRegExp(pathFilter.path);
-    if (pathFilter.choice.indexOf("start") != -1) {
+    var selection_type = pathFilter.choice.split(":")[1];
+    if (selection_type == "start") {
       if (pathFilter.path.charAt(0) != "/") {
-        path_regex = escapeRegExp("/"+pathFilter.path);
+        path_regex = escapeRegExp("/" + pathFilter.path);
       }
       path_regex = "^" + path_regex;
-    } else if (pathFilter.choice.indexOf("end") != -1) {
+    } else if (selection_type == "end") {
       path_regex = path_regex + "$";
     }
     path_regex = new RegExp(path_regex, 'i');
-    if (pathFilter.choice.indexOf("does not") == -1) {
+    if (pathFilter.choice.split(":")[0] == "include") {
       pathOrConditions.include.push(tests.test.match(path_regex));
     } else {
       pathOrConditions.exclude.push(tests.test.match(path_regex));
