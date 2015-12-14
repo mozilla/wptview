@@ -10,7 +10,10 @@
   </form>
   <br>
   <div ng-hide="isGenerateDisabled">
-
+    <input type="radio" ng-model="testTypeFilter" value="parent">Parent
+    <input type="radio" ng-model="testTypeFilter" value="child">Child
+    <input type="radio" ng-model="testTypeFilter" value="both">Both
+    <br><br>
     <button ng-click="addPath()">Add Path</button>
     <button ng-click="deletePath()">Delete Path</button>
     <br><br>

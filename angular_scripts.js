@@ -42,9 +42,9 @@ app.factory('ResultsModel',function() {
       .then((subtests) => {return lovefield.insertSubtestResults(resultData, subtests, testRunData)})
   }
 
-  ResultsModel.prototype.getResults = function(filter, pathFilter) {
+  ResultsModel.prototype.getResults = function(filter, pathFilter, testTypeFilter) {
     var lovefield = this.service;
-    return lovefield.selectFilteredResults(filter, pathFilter);
+    return lovefield.selectFilteredResults(filter, pathFilter, testTypeFilter);
   }
 
   ResultsModel.prototype.removeResults = function() {
@@ -68,6 +68,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.isFileEmpty = true;
   $scope.filter = [];
   $scope.pathFilter = [];
+  $scope.testTypeFilter = "both";
   var runIndex = {};
   var resultsModel = new ResultsModel();
 
@@ -102,7 +103,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.fillTable = function() {
     console.log($scope.pathFilter);
     console.log($scope.filter);
-    resultsModel.getResults($scope.filter, $scope.pathFilter)
+    resultsModel.getResults($scope.filter, $scope.pathFilter, $scope.testTypeFilter)
     .then((results) => {
       var finalResults = organizeResults(results);
       console.log(finalResults);
