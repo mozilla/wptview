@@ -1,8 +1,9 @@
 :root {
     font-family: "Fira Sans", "DejaVu Sans", "Bitstream Vera Sans", "Sans";
+    font-weight: light;
     font-size: 12 px;
     padding: 0;
-    margin:0;
+    margin: 0;
     background-color: #f8f8f8;
 }
 
@@ -18,8 +19,16 @@ h1 {
     background-color: #e7ebf1;
 }
 
-div#wptview {
+#wptview {
     padding-left: 16px;
+    padding-right: 16px;
+}
+
+#runsData {
+    display: flex;
+}
+
+#runsData > div {
     padding-right: 16px;
 }
 
@@ -37,37 +46,58 @@ th {
     background-color: #e7ebf1;
 }
 
-td {
+tbody > tr > td {
     border-bottom: thin solid black;
 }
 
+.details-legend {
+    margin-botom:5px;
+}
+
+#resultsTable > tbody > tr:hover {
+    background-color: #e7ebf1;
+}
+
+#resultsTable > tbody > tr > td:first-child {
+    font-family: "Fira Sans Mono", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", "Monospace";
+    font-size: 10px;
+    text-align:left;
+}
+
+#resultsTable > tbody > tr > td:nth-child(2) {
+    text-align:left;
+}
+
+.expected, .result {
+    width: 5em;
+}
 
 .PASS, .OK {
-    background-color:green;
+    background-color: green;
     color: white;
 }
 
 .FAIL {
-    background-color:red;
+    background-color: red;
     color: white;
 }
 
 .SKIP {
-    background-color:blue;
+    background-color: blue;
     color: white;
 }
 
 .ERROR {
-    background-color:orange;
+    background-color: orange;
     color: white;
 }
 
 .TIMEOUT, .NOTRUN {
-    background-color:purple;
+    background-color: purple;
     color: white;
 }
 
 .CRASH {
-    background-color:black;
+    background-color: black;
     color: white;
 }

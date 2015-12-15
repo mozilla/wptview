@@ -70,21 +70,26 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.pathFilter = [];
   $scope.busy = true;
   $scope.runs = null;
+  $scope.upload = {};
   var runIndex = {};
   var resultsModel = new ResultsModel();
 
-  var updateRuns = function() {
+  function updateRuns() {
+    var runs;
     return resultsModel.getRuns()
-      .then((runs) => {
+      .then((runsData) => runs = runsData)
+      .then(() => {
         $scope.runs = runs;
         $scope.runs.forEach((run, i) => {
           runIndex[run.run_id] = i;
         });
-        $scope.busy = false;
-      })
+      });
   }
 
-  updateRuns().then(() => $scope.$apply());
+  updateRuns().then(() => {
+    $scope.busy = false;
+    $scope.$apply();
+  });
 
   $scope.range = function(min, max, step) {
       step = step || 1;
@@ -99,11 +104,26 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     $scope.busy = true;
     var evt = $scope.fileEvent;
     var file = evt.target.files[0];
-    resultsModel.addResultsFromLogs(file, $scope.run_name)
+    resultsModel.addResultsFromLogs(file, $scope.upload.runName)
     .then(updateRuns)
     .then(() => {
       $scope.isFileEmpty = true;
       $scope.warning_message = $scope.warnings.length + " warnings found.";
+      $scope.upload.runName = "";
+      $scope.busy = false;
+      $scope.$apply();
+    });
+  }
+
+  $scope.clearTable = function(run_id) {
+    $scope.busy = true;
+    resultsModel.removeResults(run_id)
+      .then(() => {
+        console.log("Table successfully cleared!");
+        $scope.results = null;
+        $scope.warnings = []})
+    .then(updateRuns)
+    .then(() => {
       $scope.busy = false;
       $scope.$apply();
     });
@@ -121,18 +141,6 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     });
   }
 
-  $scope.clearTable = function(run_id) {
-    $scope.busy = true;
-    resultsModel.removeResults(run_id)
-    .then(() => {
-      console.log("Table successfully cleared!");
-      $scope.results = null;
-      updateRuns();
-      $scope.warnings = [];
-      $scope.busy = false;
-      $scope.$apply();
-    });
-  }
 
   $scope.newFile = function(evt) {
     $scope.isFileEmpty = false;

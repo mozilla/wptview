@@ -403,18 +403,39 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
 
 LovefieldService.prototype.deleteEntries = function(run_id) {
   return this.getDbConnection().then((db) => {
-    var q1 = db.delete().from(this.test_results);
-    var q2 = db.delete().from(this.tests);
-    var q3 = db.delete().from(this.test_runs);
+    var test_results = this.test_results;
+    var tests = this.tests;
+    var test_runs = this.test_runs;
+    var q1 = db.delete().from(test_results);
+    var q2 = db.delete().from(test_runs);
     if (run_id) {
-      q1 = q1.where(this.test_results.run_id.eq(run_id));
-      q2 = q2
-        .leftOuterJoin(this.test_results, this.test_results.test_id.eq(this.tests.test_id))
-        .where(this.test_results.result_id.eq(null));
-      q3 = q3.where(this.test_runs.run_id.eq(run_id));
+      q1 = q1.where(test_results.run_id.eq(run_id));
+      q2 = q2.where(test_runs.run_id.eq(run_id));
+    }
+    var queries = [q1, q2];
+    if (run_id) {
+      // Can't do a leftOuterJoin in a delete so we select all the ids we want to delete
+      // in one query and then delete them in another
+      queries.push(
+        db.select(tests.id)
+          .from(tests)
+          .leftOuterJoin(test_results, test_results.test_id.eq(tests.id))
+          .where(test_results.result_id.eq(null)));
+    } else {
+      queries.push(db.delete().from(tests));
     }
     var tx = db.createTransaction();
-    return tx.exec([q1, q2, q3]);
+    return tx.exec(queries)
+      .then((data) => {
+        if (run_id) {
+          var test_list = data[2].map((x) => {x.tests.id});
+          return db.delete()
+            .from(tests)
+            .where(tests.id.in(test_list))
+            .exec()
+        }
+        return data;
+      });
   })
 }
 
@@ -438,7 +459,7 @@ LovefieldService.prototype.getRuns = function() {
       db = db_conn;
       test_runs = this.test_runs;
       test_results = this.test_results;
-      return db.select(test_runs.run_id, lf.fn.count(test_results.result_id))
+      return db.select(test_runs.run_id, lf.fn.count(test_results.result_id).as('count'))
         .from(test_runs)
         .innerJoin(test_results, test_results.run_id.eq(test_runs.run_id))
         .groupBy(test_runs.run_id)
@@ -447,7 +468,7 @@ LovefieldService.prototype.getRuns = function() {
     .then((count_data) => {
       // Lovefield doesn't allow us to grab all the data from test_runs and the counts
       // in a single query
-      count_data.forEach((x) => counts[x.test_runs.run_id] = x.test_results['COUNT(result_id)']);
+      count_data.forEach((x) => counts[x.test_runs.run_id] = x.count);
       return db.select().from(test_runs).exec()
     })
     .then((data) => {

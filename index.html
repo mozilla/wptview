@@ -1,53 +1,58 @@
 <!doctype html>
 <meta charset=utf-8>
-<title>web-platform-tests Results Viewer</title>
+<title>Web Platform Tests Results</title>
 <link rel=stylesheet href="wptview.css">
 
-<h1>web-platform-tests Results Viewer</h1>
+<h1>Web Platform Tests Viewer</h1>
 <div id="wptview" ng-app="wptview" ng-controller="wptviewController">
-  <h2>Log Files</h2>
 
-  <p ng-if="runs == null">
-    Loading...
-  </p>
+  <section>
+    <h2>Log Files</h2>
 
-  <table id="runsTable" ng-if="runs.length">
-    <tr>
-      <th>Run Name</th>
-      <th>Results Loaded</th>
-      <th></th>
-    </tr>
-    <tr ng-if="runs.length === 0">
-      <td colspan=3>No data loaded.</td>
-    </tr>
-    <tr ng-repeat="run in runs">
-      <td>{{ run.name }}</td>
-      <td>{{ run.count }}</td>
-      <td><button ng-click="clearTable(run.run_id)" ng-disabled="busy">Clear</button></td>
-    </tr>
-  </table>
-
-  <div>
-    <p ng-click="showImport = !showImport">
-      <span ng-if="!showImport">▶</span>
-      <span ng-if="showImport">▼</span>
-      Import
+    <p ng-if="runs == null">
+      Loading...
     </p>
-    <div class="import" ng-hide="!showImport">
-      <form name="fileInput" novalidate>
-        <input name="logfile" type="file" id="log_file" custom-on-change="newFile" ng-disabled="busy" value="Select File">
-        <input name="run" type="text" ng-model="run_name" required ng-disabled="busy || isFileEmpty" placeholder="Run name">
-        <button ng-click="uploadFile()" ng-disabled="busy || isFileEmpty || fileInput.$invalid" for="fileInput">Import Log</button>
-      </form>
+
+    <div id="runsData"  ng-if="runs !== null">
+      <div>
+        <table id="runsTable">
+          <tr>
+            <th>Run Name</th>
+            <th>Results Loaded</th>
+            <th></th>
+          </tr>
+          <tr ng-repeat="run in runs">
+            <td>{{ run.name }}</td>
+            <td>{{ run.count }}</td>
+            <td><button ng-click="clearTable(run.run_id)" ng-disabled="busy">Clear</button></td>
+          </tr>
+          <tfoot>
+            <tr>
+              <td colspan=2></td>
+              <td><button ng-click="clearTable()" ng-disabled="busy || !runs.length">Clear All</button></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div>
+        <div ng-click="showImport = !showImport" class="details-legend">
+          <span ng-if="!showImport">▶</span>
+          <span ng-if="showImport">▼</span>
+          Import
+        </div>
+        <div class="import" ng-hide="!showImport">
+          <form name="fileInput" novalidate>
+            <input name="logfile" type="file" id="log_file" custom-on-change="newFile" ng-disabled="busy" value="Select File">
+            <input name="run" type="text" ng-model="upload.runName" required ng-disabled="busy || isFileEmpty" placeholder="Run name">
+            <button ng-click="uploadFile()" ng-disabled="busy || isFileEmpty || fileInput.$invalid" for="fileInput">Import Log</button>
+          </form>
+        </div>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <p>
-    <button ng-click="clearTable()" ng-disabled="busy || !runs.length">Clear All Data</button>
-  </p>
-
-
-  <div ng-hide="runs === null || !runs.length">
+  <section ng-hide="runs === null || !runs.length">
     <h2>Filter</h2>
     <p>
       <label>
@@ -57,7 +62,7 @@
            <button ng-disabled="busy || pathFilter.length === 0" ng-click="deletePath()">Delete</button>
         </form>
         <form ng-repeat="i in range(1, pathFilter.length+1)">
-          <select ng-model="pathFilter[$index].choice">
+          <select ng-disabled="busy" ng-model="pathFilter[$index].choice">
             <option value="include:start">starts with</option>
             <option value="include:end">ends with</option>
             <option value="include:contains">contains</option>
@@ -94,9 +99,9 @@
             <option value="CRASH">CRASH</option>
           </select>
         </form>
-  </div>
+  </section>
 
-  <div id="results" ng-hide="busy || runs === null || !runs.length">
+  <section id="results" ng-hide="busy || runs === null || !runs.length">
     <h2>Results</h2>
     <form>
       <button ng-click="fillTable()" ng-disabled="busy || runs == null || runs.length === 0">Update</button>
@@ -118,7 +123,7 @@
         <td ng-repeat-end class="result {{run.status}}">{{ run.status }}</td>
       </tr>
     </table>
-  </div>
+  </section>
   <p>
     {{ warning_message }}
   </p>
