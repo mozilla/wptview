@@ -1,76 +1,124 @@
-<html>
-<body>
+<!doctype html>
+<meta charset=utf-8>
+<title>web-platform-tests Results Viewer</title>
+<link rel=stylesheet href="wptview.css">
 
+<h1>web-platform-tests Results Viewer</h1>
 <div id="wptview" ng-app="wptview" ng-controller="wptviewController">
-  <form name="fileInput" novalidate>
-    <input name="logfile" type="file" id="log_file" custom-on-change="newFile">
-    <input name="run" type="text" ng-model="run_name" required>
-    <button ng-click="uploadFile()" ng-disabled="isFileEmpty || fileInput.$invalid">Crunch!</button>
-    <button ng-click="clearTable()" ng-disabled="isGenerateDisabled">Clear!</button>
-  </form>
-  <br>
-  <div ng-hide="isGenerateDisabled">
+  <h2>Log Files</h2>
 
-    <button ng-click="addPath()">Add Path</button>
-    <button ng-click="deletePath()">Delete Path</button>
-    <br><br>
-    <form ng-repeat="i in range(1, pathFilter.length+1)">
-      Path
-      <select ng-model="pathFilter[$index].choice">
-        <option value="include:start">starts with</option>
-        <option value="include:end">ends with</option>
-        <option value="include:contains">contains</option>
-        <option value="exclude:start">does not start with</option>
-        <option value="exclude:end">does not end with</option>
-        <option value="exclude:contains">does not contain</option>
-      </select>
-      <input type="text" ng-model="pathFilter[$index].path">
-    </form>
-    <br><br><br>
+  <p ng-if="runs == null">
+    Loading...
+  </p>
 
-    <button ng-click="addConstraint()">Add</button>
-    <button ng-click="deleteConstraint()">Delete</button>
-    <br><br>
-    <form ng-repeat="i in range(1, filter.length+1)">
-      <select ng-model="filter[$index].run">
-        <option ng-repeat="run in runs" value="{{ run.name }}">{{ run.name }}</option>
-      </select>
-      <select ng-model="filter[$index].equality">
-        <option value="is">is</option>
-        <option value="is not">is not</option>
-      </select>
-      <select ng-model="filter[$index].status">
-        <option value="PASS">PASS</option>
-        <option value="SKIP">SKIP</option>
-        <option value="ERROR">ERROR</option>
-        <option value="FAIL">FAIL</option>
-        <option value="OK">OK</option>
-        <option value="TIMEOUT">TIMEOUT</option>
-        <option value="NOTRUN">NOTRUN</option>
-        <option value="CRASH">CRASH</option>
-      </select>
-    </form>
-    <br>
-    <button ng-click="fillTable()" ng-disabled="isGenerateDisabled">Generate!</button>
-  </div>
-
-  <table ng-table="resultsTable" border="1">
+  <table id="runsTable" ng-if="runs.length">
     <tr>
-      <td rowspan="2">Test</td>
-      <td rowspan="2">Subtest</td>
-      <td colspan="2" ng-repeat="run in runs">{{ run.name }}</td>
+      <th>Run Name</th>
+      <th>Results Loaded</th>
+      <th></th>
     </tr>
-    <tr>
-        <td ng-repeat-start="run in runs">Expected</td>
-        <td ng-repeat-end>Actual</td>
+    <tr ng-if="runs.length === 0">
+      <td colspan=3>No data loaded.</td>
     </tr>
-    <tr ng-repeat="result in results">
-      <td>{{ result.test }}</td>
-      <td>{{ result.subtest }}</td>
-      <td ng-repeat-start="run in result.runs">{{ run.expected }}</td>
-      <td ng-repeat-end>{{ run.status }}</td>
+    <tr ng-repeat="run in runs">
+      <td>{{ run.name }}</td>
+      <td>{{ run.count }}</td>
+      <td><button ng-click="clearTable(run.run_id)" ng-disabled="busy">Clear</button></td>
     </tr>
   </table>
+
+  <div>
+    <p ng-click="showImport = !showImport">
+      <span ng-if="!showImport">▶</span>
+      <span ng-if="showImport">▼</span>
+      Import
+    </p>
+    <div class="import" ng-hide="!showImport">
+      <form name="fileInput" novalidate>
+        <input name="logfile" type="file" id="log_file" custom-on-change="newFile" ng-disabled="busy" value="Select File">
+        <input name="run" type="text" ng-model="run_name" required ng-disabled="busy || isFileEmpty" placeholder="Run name">
+        <button ng-click="uploadFile()" ng-disabled="busy || isFileEmpty || fileInput.$invalid" for="fileInput">Import Log</button>
+      </form>
+    </div>
+  </div>
+
+  <p>
+    <button ng-click="clearTable()" ng-disabled="busy || !runs.length">Clear All Data</button>
+  </p>
+
+
+  <div ng-hide="runs === null || !runs.length">
+    <h2>Filter</h2>
+    <p>
+      <label>
+        By path:<br>
+        <form>
+           <button ng-disabled="busy" ng-click="addPath()">Add</button>
+           <button ng-disabled="busy || pathFilter.length === 0" ng-click="deletePath()">Delete</button>
+        </form>
+        <form ng-repeat="i in range(1, pathFilter.length+1)">
+          <select ng-model="pathFilter[$index].choice">
+            <option value="include:start">starts with</option>
+            <option value="include:end">ends with</option>
+            <option value="include:contains">contains</option>
+            <option value="exclude:start">does not start with</option>
+            <option value="exclude:end">does not end with</option>
+            <option value="exclude:contains">does not contain</option>
+          </select>
+          <input type="text" ng-model="pathFilter[$index].path">
+        </form>
+    </p>
+    <p>
+      <label>
+        By result:<br>
+        <form>
+          <button ng-disabled="busy" ng-click="addConstraint()">Add</button>
+          <button ng-disabled="busy || filter.length === 0" ng-click="deleteConstraint()">Delete</button>
+        </form>
+        <form ng-repeat="i in range(1, filter.length+1)">
+          <select ng-disabled="busy" ng-model="filter[$index].run">
+            <option ng-repeat="run in runs" value="{{ run.name }}">{{ run.name }}</option>
+          </select>
+          <select ng-disabled="busy" ng-model="filter[$index].equality">
+            <option value="is">is</option>
+            <option value="is not">is not</option>
+          </select>
+          <select ng-disabled="busy" ng-model="filter[$index].status">
+            <option value="PASS">PASS</option>
+            <option value="SKIP">SKIP</option>
+            <option value="ERROR">ERROR</option>
+            <option value="FAIL">FAIL</option>
+            <option value="OK">OK</option>
+            <option value="TIMEOUT">TIMEOUT</option>
+            <option value="NOTRUN">NOTRUN</option>
+            <option value="CRASH">CRASH</option>
+          </select>
+        </form>
+  </div>
+
+  <div id="results" ng-hide="busy || runs === null || !runs.length">
+    <h2>Results</h2>
+    <form>
+      <button ng-click="fillTable()" ng-disabled="busy || runs == null || runs.length === 0">Update</button>
+    </form>
+    <table ng-table="resultsTable" id="resultsTable" ng-hide="results === null">
+      <tr>
+        <th rowspan="2">Test</th>
+        <th rowspan="2">Subtest</th>
+        <th colspan="2" ng-repeat="run in runs">{{ run.name }}</th>
+      </tr>
+      <tr>
+        <th ng-repeat-start="run in runs">Expected</th>
+        <th ng-repeat-end>Actual</th>
+      </tr>
+      <tr ng-repeat="result in results">
+        <td>{{ result.test }}</td>
+        <td>{{ result.subtest }}</td>
+        <td ng-repeat-start="run in result.runs" class="expected {{run.expected}}">{{ run.expected }}</td>
+        <td ng-repeat-end class="result {{run.status}}">{{ run.status }}</td>
+      </tr>
+    </table>
+  </div>
   <p>
     {{ warning_message }}
   </p>
@@ -80,5 +128,3 @@
 <script src="logcruncher.js"></script>
 <script src="angular.min.js"></script>
 <script src="angular_scripts.js"></script>
-</body>
-</html>

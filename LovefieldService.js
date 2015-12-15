@@ -24,15 +24,14 @@ LovefieldService.prototype.onConnected_ = function() {
  */
 LovefieldService.prototype.getDbConnection = function() {
   if (this.db_ != null) {
-    return this.db_;
+    return new Promise((resolve) => resolve(this.db_));
   }
   var connectOptions = {storeType: lf.schema.DataStoreType.INDEXED_DB};
-  return this.buildSchema_().connect(connectOptions).then(
-      function(db) {
-        this.db_ = db;
-        this.onConnected_();
-        return db;
-      }.bind(this));
+  return this.buildSchema_().connect(connectOptions).then((db) => {
+    this.db_ = db;
+    this.onConnected_();
+    return db;
+  });
 };
 
 
@@ -402,12 +401,21 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
   });
 }
 
-LovefieldService.prototype.deleteEntries = function() {
-  var q1 = this.db_.delete().from(this.test_results);
-  var q2 = this.db_.delete().from(this.tests);
-  var q3 = this.db_.delete().from(this.test_runs);
-  var tx = this.db_.createTransaction();
-  return tx.exec([q1, q2, q3]);
+LovefieldService.prototype.deleteEntries = function(run_id) {
+  return this.getDbConnection().then((db) => {
+    var q1 = db.delete().from(this.test_results);
+    var q2 = db.delete().from(this.tests);
+    var q3 = db.delete().from(this.test_runs);
+    if (run_id) {
+      q1 = q1.where(this.test_results.run_id.eq(run_id));
+      q2 = q2
+        .leftOuterJoin(this.test_results, this.test_results.test_id.eq(this.tests.test_id))
+        .where(this.test_results.result_id.eq(null));
+      q3 = q3.where(this.test_runs.run_id.eq(run_id));
+    }
+    var tx = db.createTransaction();
+    return tx.exec([q1, q2, q3]);
+  })
 }
 
 LovefieldService.prototype.selectParticularRun = function(runName) {
@@ -420,9 +428,30 @@ LovefieldService.prototype.selectParticularRun = function(runName) {
 }
 
 LovefieldService.prototype.getRuns = function() {
-  var test_runs = this.test_runs;
-  return this.db_.
-    select().
-    from(test_runs).
-    exec();
+  var db = null;
+  var service = this;
+  var test_runs = null;
+  var test_results = null;
+  var counts = {};
+  return this.getDbConnection()
+    .then((db_conn) => {
+      db = db_conn;
+      test_runs = this.test_runs;
+      test_results = this.test_results;
+      return db.select(test_runs.run_id, lf.fn.count(test_results.result_id))
+        .from(test_runs)
+        .innerJoin(test_results, test_results.run_id.eq(test_runs.run_id))
+        .groupBy(test_runs.run_id)
+        .exec()
+    })
+    .then((count_data) => {
+      // Lovefield doesn't allow us to grab all the data from test_runs and the counts
+      // in a single query
+      count_data.forEach((x) => counts[x.test_runs.run_id] = x.test_results['COUNT(result_id)']);
+      return db.select().from(test_runs).exec()
+    })
+    .then((data) => {
+      data.forEach((x) => x.count = counts[x.run_id]);
+      return data;
+    });
 }
