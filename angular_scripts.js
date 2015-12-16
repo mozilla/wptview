@@ -62,7 +62,6 @@ app.factory('ResultsModel',function() {
 
 app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.results = null;
-  $scope.warning_message = "";
   $scope.warnings = [];
   $scope.isFileEmpty = true;
   $scope.showImport = false;
@@ -108,7 +107,6 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     .then(updateRuns)
     .then(() => {
       $scope.isFileEmpty = true;
-      $scope.warning_message = $scope.warnings.length + " warnings found.";
       $scope.upload.runName = "";
       $scope.busy = false;
       $scope.$apply();
@@ -169,6 +167,10 @@ app.controller('wptviewController', function($scope, ResultsModel) {
 
   $scope.deletePath = function() {
     $scope.pathFilter.pop();
+  }
+
+  $scope.warning_message = function() {
+    return $scope.warnings.length + " warnings found.";
   }
 
   function organizeResults(results) {

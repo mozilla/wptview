@@ -428,17 +428,15 @@ LovefieldService.prototype.deleteEntries = function(run_id) {
           // LEFT OUTER JOIN test_results ON tests.id = test_results.test_id
           // WHERE test_results.test_id = null
           // returned all rows in tests, not just those with no matching row in test_results.
-          // So we select all the tests with a matching result in one quwey, all the tests
-          // in another quwey and take the difference in application code. This is silly.
+          // So we select all the tests with a matching result in one query, all the tests
+          // in another query and take the difference in application code. This is silly.
           return db.select(tests.id)
             .from(tests)
             .innerJoin(test_results, tests.id.eq(test_results.test_id))
             .exec();
         })
         .then((ids) => {
-          for (id in ids) {
-            keepIds[id] = true;
-          }
+          ids.forEach((id) => keepIds[id] = true);
           return db.select(tests.id)
             .from(tests)
             .exec();
@@ -449,10 +447,10 @@ LovefieldService.prototype.deleteEntries = function(run_id) {
             .from(tests)
             .where(tests.id.in(removeIds))
             .exec();
-        })
+        });
     }
     return rv;
-  })
+  });
 }
 
 LovefieldService.prototype.selectParticularRun = function(runName) {
