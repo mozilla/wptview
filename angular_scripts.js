@@ -42,9 +42,9 @@ app.factory('ResultsModel',function() {
       .then((subtests) => {return lovefield.insertSubtestResults(resultData, subtests, testRunData)})
   }
 
-  ResultsModel.prototype.getResults = function(filter, pathFilter) {
+  ResultsModel.prototype.getResults = function(filter, pathFilter, minTestId, maxTestId, limit) {
     var lovefield = this.service;
-    return lovefield.selectFilteredResults(filter, pathFilter);
+    return lovefield.selectFilteredResults(filter, pathFilter, minTestId, maxTestId, limit);
   }
 
   ResultsModel.prototype.removeResults = function(run_id) {
@@ -70,6 +70,11 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.busy = true;
   $scope.runs = null;
   $scope.upload = {};
+  $scope.resultsView = {limit: 50,
+                        firstPage: true,
+                        lastPage: false,
+                        minTestId: null,
+                        maxTestId: null}
   var runIndex = {};
   var resultsModel = new ResultsModel();
 
@@ -127,18 +132,30 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     });
   }
 
-  $scope.fillTable = function() {
-    console.log($scope.pathFilter);
-    console.log($scope.filter);
-    resultsModel.getResults($scope.filter, $scope.pathFilter)
-    .then((results) => {
-      var finalResults = organizeResults(results);
-      console.log(finalResults);
-      $scope.results = finalResults;
-      $scope.$apply();
-    });
-  }
+  $scope.fillTable = function(page) {
+    var minTestId = null;
+    var maxTestId = null;
+    if (page == "next") {
+      var minTestId = $scope.resultsView.maxTestId;
+    } else if (page == "prev") {
+      var maxTestId = $scope.resultsView.minTestId;
+    }
 
+    resultsModel.getResults($scope.filter, $scope.pathFilter, minTestId, maxTestId,
+                            $scope.resultsView.limit)
+      .then((results) => {
+        if (!page) {
+          $scope.resultsView.firstTestId = results[0].test_id;
+        }
+        $scope.resultsView.lastPage = results.length < $scope.resultsView.limit;
+        $scope.resultsView.firstPage = results[0].test_id === $scope.resultsView.firstTestId;
+        $scope.resultsView.minTestId = results[0].test_id;
+        $scope.resultsView.maxTestId = results[results.length - 1].test_id;
+        var finalResults = organizeResults(results);
+        $scope.results = finalResults;
+        $scope.$apply();
+      });
+  }
 
   $scope.newFile = function(evt) {
     $scope.isFileEmpty = false;

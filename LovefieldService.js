@@ -274,30 +274,8 @@ LovefieldService.prototype.selectAllSubtests = function() {
     exec();
 }
 
-LovefieldService.prototype.selectNTests = function() {
-  var tests = this.tests;
-  var test_results = this.test_results;
-  var test_runs = this.test_runs;
-  return this.db_.
-    select(
-      tests.test.as("test"),
-      test_results.message.as("message"),
-      test_results.status.as("status"),
-      test_results.expected.as("expected"),
-      tests.title.as("title"),
-      test_runs.run_id.as("run_id"),
-      test_runs.name.as("run_name")
-    ).
-    from(tests).
-    innerJoin(test_results, tests.id.eq(test_results.test_id)).
-    innerJoin(test_runs, test_results.run_id.eq(test_runs.run_id)).
-    orderBy(tests.id).
-    orderBy(test_runs.run_id).
-    limit(40).
-    exec();
-}
-
-LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters) {
+LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters,
+                                                            minTestId, maxTestId, limit) {
   var lovefield = this;
   var tests = this.tests;
   var test_results = this.test_results;
@@ -368,20 +346,40 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
     whereConditions.push(lf.op.not(lf.op.or.apply(lf.op.or, pathOrConditions.exclude)));
   }
 
+  if (pathOrConditions.include.length) {
+    whereConditions.push(lf.op.or.apply(lf.op.or, pathOrConditions.include));
+  }
+  if (pathOrConditions.exclude.length) {
+    whereConditions.push(lf.op.not(lf.op.or.apply(lf.op.or, pathOrConditions.exclude)));
+  }
+
+  orderByDir = lf.Order.ASC;
+  if (minTestId) {
+      whereConditions.push(tests.id.gt(minTestId))
+  } else if (maxTestId) {
+      whereConditions.push(tests.id.lt(maxTestId))
+      orderByDir = lf.Order.DESC;
+  }
+
   if (whereConditions.length) {
     var whereClause = lf.op.and.apply(lf.op.and, whereConditions);
     query = query.where(whereClause);
   }
 
+  query = query.orderBy(tests.id, orderByDir);
+  query = query.limit(limit);
+
   return query.exec()
   .then((test_ids) => {
     var test_list = test_ids.map((test) => test.test_id);
     console.log(test_list);
+
     // We need an additional query to select test results for ALL runs
     // for the tests filtered by q1. We need this unusual approach as
     // lovefield doesn't support subqueries.
     return lovefield.db_.
       select(
+        tests.id.as("test_id"),
         tests.test.as("test"),
         test_results.message.as("message"),
         test_results.status.as("status"),
@@ -389,15 +387,14 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
         tests.title.as("title"),
         test_runs.run_id.as("run_id"),
         test_runs.name.as("run_name")
-      ).
-      from(tests).
-      innerJoin(test_results, tests.id.eq(test_results.test_id)).
-      innerJoin(test_runs, test_results.run_id.eq(test_runs.run_id)).
-      where(tests.id.in(test_list)).
-      orderBy(tests.id).
-      orderBy(test_runs.run_id).
-      limit(50).
-      exec();
+      )
+      .from(tests)
+      .innerJoin(test_results, tests.id.eq(test_results.test_id))
+      .innerJoin(test_runs, test_results.run_id.eq(test_runs.run_id))
+      .where(tests.id.in(test_list))
+      .orderBy(tests.id)
+      .orderBy(test_runs.run_id)
+      .exec();
   });
 }
 
