@@ -47,9 +47,9 @@ app.factory('ResultsModel',function() {
     return lovefield.selectFilteredResults(filter, pathFilter);
   }
 
-  ResultsModel.prototype.removeResults = function() {
+  ResultsModel.prototype.removeResults = function(run_id) {
     var lovefield = this.service;
-    return lovefield.deleteEntries();
+    return lovefield.deleteEntries(run_id);
   }
 
   ResultsModel.prototype.getRuns = function() {
@@ -61,15 +61,34 @@ app.factory('ResultsModel',function() {
 });
 
 app.controller('wptviewController', function($scope, ResultsModel) {
-  $scope.results = {};
-  $scope.warning_message = "";
+  $scope.results = null;
   $scope.warnings = [];
-  $scope.isGenerateDisabled = true;
   $scope.isFileEmpty = true;
+  $scope.showImport = false;
   $scope.filter = [];
   $scope.pathFilter = [];
+  $scope.busy = true;
+  $scope.runs = null;
+  $scope.upload = {};
   var runIndex = {};
   var resultsModel = new ResultsModel();
+
+  function updateRuns() {
+    var runs;
+    return resultsModel.getRuns()
+      .then((runsData) => runs = runsData)
+      .then(() => {
+        $scope.runs = runs;
+        $scope.runs.forEach((run, i) => {
+          runIndex[run.run_id] = i;
+        });
+      });
+  }
+
+  updateRuns().then(() => {
+    $scope.busy = false;
+    $scope.$apply();
+  });
 
   $scope.range = function(min, max, step) {
       step = step || 1;
@@ -81,20 +100,29 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   };
 
   $scope.uploadFile = function () {
+    $scope.busy = true;
     var evt = $scope.fileEvent;
     var file = evt.target.files[0];
-    resultsModel.addResultsFromLogs(file, $scope.run_name)
-    .then(() => resultsModel.getRuns())
-    .then((runs) => {
-      $scope.runs = runs;
-      console.log("Results added!");
-      console.log($scope.runs);
-      $scope.runs.forEach((run, i) => {
-        runIndex[run.run_id] = i;
-      });
-      $scope.isGenerateDisabled = false;
+    resultsModel.addResultsFromLogs(file, $scope.upload.runName)
+    .then(updateRuns)
+    .then(() => {
       $scope.isFileEmpty = true;
-      $scope.warning_message = $scope.warnings.length + " warnings found.";
+      $scope.upload.runName = "";
+      $scope.busy = false;
+      $scope.$apply();
+    });
+  }
+
+  $scope.clearTable = function(run_id) {
+    $scope.busy = true;
+    resultsModel.removeResults(run_id)
+      .then(() => {
+        console.log("Table successfully cleared!");
+        $scope.results = null;
+        $scope.warnings = []})
+    .then(updateRuns)
+    .then(() => {
+      $scope.busy = false;
       $scope.$apply();
     });
   }
@@ -111,17 +139,6 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     });
   }
 
-  $scope.clearTable = function() {
-    resultsModel.removeResults()
-    .then(() => {
-      console.log("Table successfully cleared!");
-      $scope.results = {};
-      $scope.runs = {};
-      $scope.warnings = [];
-      $scope.isGenerateDisabled = true;
-      $scope.$apply();
-    });
-  }
 
   $scope.newFile = function(evt) {
     $scope.isFileEmpty = false;
@@ -150,6 +167,10 @@ app.controller('wptviewController', function($scope, ResultsModel) {
 
   $scope.deletePath = function() {
     $scope.pathFilter.pop();
+  }
+
+  $scope.warning_message = function() {
+    return $scope.warnings.length + " warnings found.";
   }
 
   function organizeResults(results) {
