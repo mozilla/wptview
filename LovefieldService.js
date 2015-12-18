@@ -346,13 +346,6 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
     whereConditions.push(lf.op.not(lf.op.or.apply(lf.op.or, pathOrConditions.exclude)));
   }
 
-  if (pathOrConditions.include.length) {
-    whereConditions.push(lf.op.or.apply(lf.op.or, pathOrConditions.include));
-  }
-  if (pathOrConditions.exclude.length) {
-    whereConditions.push(lf.op.not(lf.op.or.apply(lf.op.or, pathOrConditions.exclude)));
-  }
-
   orderByDir = lf.Order.ASC;
   if (minTestId) {
       whereConditions.push(tests.id.gt(minTestId))
