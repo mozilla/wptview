@@ -1,6 +1,5 @@
 var app = angular.module('wptview', []);
 
-
 app.directive('customOnChange', function() {
   return {
     restrict: 'A',
@@ -11,9 +10,38 @@ app.directive('customOnChange', function() {
   };
 });
 
+function WorkerService(workerScript) {
+  this.msg_id = 0;
+  this.resolvers = {}
+
+  this.worker = new Worker(workerScript);
+  this.worker.onmessage = function(event) {
+    var msg_id = event.data[0];
+    var data = event.data[1];
+    if (!this.resolvers.hasOwnProperty(msg_id)) {
+      throw Error("Unexpected message " + msg_id);
+    }
+    resolve = this.resolvers[msg_id];
+    delete this.resolvers[msg_id];
+    console.log(data);
+    resolve(data);
+  }.bind(this);
+}
+
+WorkerService.prototype.run = function(command, data) {
+  var data = data || [];
+  var msg = [this.msg_id++, command, data];
+  this.worker.postMessage(msg);
+  return new Promise((resolve) => {
+    console.log("Adding resolver " + msg[0]);
+    this.resolvers[msg[0]] = resolve;
+  });
+}
+
 app.factory('ResultsModel',function() {
   var ResultsModel = function() {
-    this.service = new LovefieldService();
+    this.service = new WorkerService("LovefieldService.js");
+    this.logReader = new WorkerService("logcruncher.js");
   }
 
   ResultsModel.prototype.addResultsFromLogs = function (file, runName) {
@@ -21,40 +49,47 @@ app.factory('ResultsModel',function() {
     var resultData = null;
     var testData = null;
     var testRunData = null;
-    return readFile(file)
-      .then((logData) => {return logCruncher(logData, testsFilter)})
+    var duplicates = null;
+    return this.logReader.call("read", [file])
       .then((data) => {resultData = data})
-      .then(() => {return lovefield.getDbConnection()})
       // Filling the test_runs table
-      .then(() => {return lovefield.selectParticularRun(runName)})
-      .then((testRuns) => {return lovefield.insertTestRuns(runName, testRuns)})
+      .then(() => {return lovefield.run("selectParticularRun", [runName])})
+      .then((testRuns) => {return lovefield.run("insertTestRuns", [runName, testRuns])})
       // Selecting current tests table, adding extra entries only
-      .then((testRuns) => {testRunData = testRuns; return lovefield.selectAllParentTests()})
-      .then((parentTests) => {return lovefield.insertTests(resultData, parentTests)})
-      .then(() => {return lovefield.selectAllParentTests()})
+      .then((testRuns) => {testRunData = testRuns;
+                           return lovefield.run("selectAllParentTests")})
+      .then((parentTests) => {return lovefield.run("insertTests", [resultData, parentTests])})
+      .then((insertData) => {
+        duplicates = insertData[1];
+        return lovefield.selectAllParentTests()
+      })
       // populating results table with parent test results
-      .then((tests) => {testData = tests; return lovefield.insertTestResults(resultData, testData, testRunData)})
+      .then((tests) => {testData = tests;
+                        return lovefield.run("insertTestResults",
+                                             [resultData, testData, testRunData])})
       // add subtests to tests table
-      .then(() => {return lovefield.selectAllSubtests()})
-      .then((subtests) => {return lovefield.insertSubtests(resultData, testData, subtests)})
-      .then(() => {return lovefield.selectAllSubtests()})
+      .then(() => {return lovefield.run("selectAllSubtests")})
+      .then((subtests) => {return lovefield.run("insertSubtests",
+                                                [resultData, testData, subtests])})
+      .then((subtestData) => {duplicates = duplicates.concat(subtestData[1]);
+                              return lovefield.run("selectAllSubtests")})
       // adding subtest results
-      .then((subtests) => {return lovefield.insertSubtestResults(resultData, subtests, testRunData)})
+      .then((subtests) => {return lovefield.run("insertSubtestResults",
+                                                [resultData, subtests, testRunData])})
+      .then(() => duplicates)
   }
 
   ResultsModel.prototype.getResults = function(filter, pathFilter, minTestId, maxTestId, limit) {
-    var lovefield = this.service;
-    return lovefield.selectFilteredResults(filter, pathFilter, minTestId, maxTestId, limit);
+    return this.service.run("selectFilteredResults",
+                            [filter, pathFilter, minTestId, maxTestId, limit]);
   }
 
   ResultsModel.prototype.removeResults = function(run_id) {
-    var lovefield = this.service;
-    return lovefield.deleteEntries(run_id);
+    return this.service.run("deleteEntries", [run_id]);
   }
 
   ResultsModel.prototype.getRuns = function() {
-    var lovefield = this.service;
-    return lovefield.getRuns();
+    return this.service.run("getRuns");
   }
 
   return ResultsModel;
@@ -95,6 +130,12 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     $scope.$apply();
   });
 
+  function updateWarnings(duplicates) {
+    $scope.$apply(function() {
+      $scope.warnings = duplicates;
+    })
+  }
+
   $scope.range = function(min, max, step) {
       step = step || 1;
       var input = [];
@@ -109,6 +150,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     var evt = $scope.fileEvent;
     var file = evt.target.files[0];
     resultsModel.addResultsFromLogs(file, $scope.upload.runName)
+    .then((duplicates) = updateWarnings(duplicates))
     .then(updateRuns)
     .then(() => {
       $scope.isFileEmpty = true;
