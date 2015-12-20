@@ -1,3 +1,14 @@
+importScripts("workerApi.js");
+
+onmessage = messageAdapter(new LogReader());
+
+function LogReader() {}
+
+LogReader.prototype.read = function(file) {
+  return readFile(file)
+    .then((logData) => {return logCruncher(logData, testsFilter)});
+}
+
 function logCruncher(rawtext, filter) {
   return new Promise(function (resolve, reject) {
     var JSONArray = [];
@@ -29,16 +40,4 @@ function readFile(file) {
     };
     reader.readAsText(file, "UTF-8");
   });
-}
-
-function updateWarnings(test, subtest) {
-    var scope = angular.element(document.getElementById("wptview")).scope();
-    scope.$apply(function() {
-        scope.warnings.push({test: test, subtest: subtest});
-    })
-}
-
-// http://stackoverflow.com/questions/3446170/escape-string-for-use-in-javascript-regex/6969486#6969486
-function escapeRegExp(str) {
-  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 }
