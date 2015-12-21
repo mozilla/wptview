@@ -50,7 +50,7 @@ app.factory('ResultsModel',function() {
     var testData = null;
     var testRunData = null;
     var duplicates = null;
-    return this.logReader.call("read", [file])
+    return this.logReader.run("read", [file])
       .then((data) => {resultData = data})
       // Filling the test_runs table
       .then(() => {return lovefield.run("selectParticularRun", [runName])})
@@ -61,7 +61,7 @@ app.factory('ResultsModel',function() {
       .then((parentTests) => {return lovefield.run("insertTests", [resultData, parentTests])})
       .then((insertData) => {
         duplicates = insertData[1];
-        return lovefield.selectAllParentTests()
+        return lovefield.run("selectAllParentTests")
       })
       // populating results table with parent test results
       .then((tests) => {testData = tests;
@@ -150,7 +150,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     var evt = $scope.fileEvent;
     var file = evt.target.files[0];
     resultsModel.addResultsFromLogs(file, $scope.upload.runName)
-    .then((duplicates) = updateWarnings(duplicates))
+    .then((duplicates) => updateWarnings(duplicates))
     .then(updateRuns)
     .then(() => {
       $scope.isFileEmpty = true;
