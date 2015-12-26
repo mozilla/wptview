@@ -1,12 +1,14 @@
 importScripts("workerApi.js");
-importScripts("lf_scripts/lovefield.min.js");
+importScripts("lf_scripts/lovefield.js");
+
+onmessage = messageAdapter(new LovefieldService());
 
 // http://stackoverflow.com/questions/3446170/escape-string-for-use-in-javascript-regex/6969486#6969486
 function escapeRegExp(str) {
   return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 }
 
-var LovefieldService = function() {
+function LovefieldService() {
   // Following member variables are initialized within getDbConnection().
   this.db_ = null;
   this.test_runs = null;
@@ -357,10 +359,12 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
 
   orderByDir = lf.Order.ASC;
   if (minTestId) {
-      whereConditions.push(tests.id.gt(minTestId))
+    whereConditions.push(tests.id.gt(minTestId));
   } else if (maxTestId) {
-      whereConditions.push(tests.id.lt(maxTestId))
-      orderByDir = lf.Order.DESC;
+    whereConditions.push(tests.id.lt(maxTestId));
+    // The final results are always in ascending order because they come from a second query
+    // with its own order
+    orderByDir = lf.Order.DESC;
   }
 
   if (whereConditions.length) {
@@ -492,5 +496,3 @@ LovefieldService.prototype.getRuns = function() {
       return data;
     });
 }
-
-onmessage = messageAdapter(new LovefieldService());

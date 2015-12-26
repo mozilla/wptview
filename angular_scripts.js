@@ -12,7 +12,7 @@ app.directive('customOnChange', function() {
 
 function WorkerService(workerScript) {
   this.msg_id = 0;
-  this.resolvers = {}
+  this.resolvers = {};
 
   this.worker = new Worker(workerScript);
   this.worker.onmessage = function(event) {
@@ -76,9 +76,22 @@ app.factory('ResultsModel',function() {
       // adding subtest results
       .then((subtests) => {return lovefield.run("insertSubtestResults",
                                                 [resultData, subtests, testRunData])})
-      .then(() => duplicates)
+      .then(() => duplicates);
   }
 
+  /*
+    Load the results of a specified number of tests, ordered by test id, either taking all
+    results above a lower limit test id, all results below an upper limit id, or all results
+    starting from the first test.
+    Results may be filtered by various filters.
+    @param {Object[]} filter - Array of filter definitions for the allowed test results.
+    @param {} pathFilter - Array if filter definitions for the allowed test names.
+    @param {(number|null)} minTestId - Exclusive lower bound on the test ID to load, or null if
+                                     there is no lower limit.
+    @param {(number|null)} maxTestId - Exclusive upper bound on the test ID to load, or null if
+                                     there is no upper limit.
+    @param {(number)} limit - Number of tests to load.
+   */
   ResultsModel.prototype.getResults = function(filter, pathFilter, minTestId, maxTestId, limit) {
     return this.service.run("selectFilteredResults",
                             [filter, pathFilter, minTestId, maxTestId, limit]);
@@ -95,21 +108,23 @@ app.factory('ResultsModel',function() {
   return ResultsModel;
 });
 
-app.controller('wptviewController', function($scope, ResultsModel) {
+app.controller('wptviewController', function($scope, LogReader, ResultsModel) {
   $scope.results = null;
   $scope.warnings = [];
-  $scope.isFileEmpty = true;
   $scope.showImport = false;
   $scope.filter = [];
   $scope.pathFilter = [];
   $scope.busy = true;
   $scope.runs = null;
   $scope.upload = {};
-  $scope.resultsView = {limit: 50,
-                        firstPage: true,
-                        lastPage: false,
-                        minTestId: null,
-                        maxTestId: null}
+  $scope.resultsView = {
+      limit: 50,
+      firstPage: true,
+      lastPage: false,
+      minTestId: null,
+      maxTestId: null,
+      firstTestId: null
+  }
   var runIndex = {};
   var resultsModel = new ResultsModel();
 
@@ -177,6 +192,9 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.fillTable = function(page) {
     var minTestId = null;
     var maxTestId = null;
+
+    $scope.busy = true;
+
     if (page == "next") {
       var minTestId = $scope.resultsView.maxTestId;
     } else if (page == "prev") {
@@ -195,6 +213,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
         $scope.resultsView.maxTestId = results[results.length - 1].test_id;
         var finalResults = organizeResults(results);
         $scope.results = finalResults;
+        $scope.busy = false;
         $scope.$apply();
       });
   }

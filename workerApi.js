@@ -4,7 +4,7 @@ function messageAdapter(service) {
     var cmd = event.data[1];
     var data = event.data[2];
 
-    console.log("Got command " + cmd);
+    console.log(service.constructor.name + " got command " + cmd);
 
     service[cmd].apply(service, data)
       .then((resp) => {console.log("Got result for command " + cmd); return resp})
