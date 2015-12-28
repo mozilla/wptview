@@ -1,4 +1,14 @@
-var LovefieldService = function() {
+importScripts("workerApi.js");
+importScripts("lf_scripts/lovefield.js");
+
+onmessage = messageAdapter(new LovefieldService());
+
+// http://stackoverflow.com/questions/3446170/escape-string-for-use-in-javascript-regex/6969486#6969486
+function escapeRegExp(str) {
+  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+}
+
+function LovefieldService() {
   // Following member variables are initialized within getDbConnection().
   this.db_ = null;
   this.test_runs = null;
@@ -100,6 +110,7 @@ LovefieldService.prototype.insertTests = function(testLogsRaw, currentTests) {
   var testRows = [];
   var tests = this.tests;
   var currentTestMap = {};
+  var duplicates = [];
   // We create an associative array whose keys are tests that have been added
   // in previous insert queries.
   currentTests.forEach(function(currentTest) {
@@ -115,7 +126,7 @@ LovefieldService.prototype.insertTests = function(testLogsRaw, currentTests) {
       // Checks whether this test is already present in the insert query array.
       if (testsBeingAdded.hasOwnProperty(testLog.test)) {
         // Notify UI as this is an anomaly.
-        updateWarnings(testLog.test);
+        duplicates.push({test: testLog.test, subtest: null});
       } else {
         // Add it to the set of keys
         testsBeingAdded[testLog.test] = 1;
@@ -130,7 +141,7 @@ LovefieldService.prototype.insertTests = function(testLogsRaw, currentTests) {
       insert().
       into(tests).
       values(testRows);
-  return q1.exec();
+  return q1.exec().then((rows) => [rows, duplicates]);
 }
 
 LovefieldService.prototype.insertTestResults = function(testLogsRaw, tests, testRuns) {
@@ -177,6 +188,7 @@ LovefieldService.prototype.insertSubtests = function(testLogsRaw, tests, current
   });
   var subtestRows = [];
   var tests = this.tests;
+  var duplicates = [];
   // Creating a 2-D hash map to store existing subtests in the table inserted
   // via previous insert queries. The first dimension corresponds to test,
   // and the second dimension corresponds to subtest.
@@ -195,8 +207,7 @@ LovefieldService.prototype.insertSubtests = function(testLogsRaw, tests, current
     if (testLog.action == "test_status" && !(currentSubtestMap.hasOwnProperty(testLog.test) && currentSubtestMap[testLog.test].hasOwnProperty(testLog.subtest))) {
       // Checking whether this subtest has been added previously in the same insert query.
       if (subtestsBeingAdded.hasOwnProperty(testLog.test) && subtestsBeingAdded[testLog.test].hasOwnProperty(testLog.subtest)) {
-        // Notify UI
-        updateWarnings(testLog.test, testLog.subtest);
+        duplicates.push({test: testLog.test, subtest: testLog.subtest});
       } else {
         // Adding test-subtest pair to hash map subtestsBeingAdded
         if (!subtestsBeingAdded.hasOwnProperty(testLog.test)) {
@@ -216,7 +227,7 @@ LovefieldService.prototype.insertSubtests = function(testLogsRaw, tests, current
       insert().
       into(tests).
       values(subtestRows);
-  return q1.exec();
+  return q1.exec().then((rows) => [rows, duplicates]);
 }
 
 LovefieldService.prototype.insertSubtestResults = function(testLogsRaw, subtests, testRuns) {
@@ -348,10 +359,12 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
 
   orderByDir = lf.Order.ASC;
   if (minTestId) {
-      whereConditions.push(tests.id.gt(minTestId))
+    whereConditions.push(tests.id.gt(minTestId));
   } else if (maxTestId) {
-      whereConditions.push(tests.id.lt(maxTestId))
-      orderByDir = lf.Order.DESC;
+    whereConditions.push(tests.id.lt(maxTestId));
+    // The final results are always in ascending order because they come from a second query
+    // with its own order
+    orderByDir = lf.Order.DESC;
   }
 
   if (whereConditions.length) {
@@ -445,11 +458,14 @@ LovefieldService.prototype.deleteEntries = function(run_id) {
 
 LovefieldService.prototype.selectParticularRun = function(runName) {
   var test_runs = this.test_runs;
-  return this.db_.
-    select().
-    from(test_runs).
-    where(test_runs.name.eq(runName)).
-    exec();
+  return this.getDbConnection()
+    .then(db => {
+      return db
+        .select()
+        .from(test_runs)
+        .where(test_runs.name.eq(runName))
+        .exec();
+    });
 }
 
 LovefieldService.prototype.getRuns = function() {
