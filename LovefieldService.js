@@ -295,33 +295,44 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
   var query = lovefield.db_.
     select(tests.id.as("test_id")).
     from(tests);
-  var runs = [];
 
-  // JOINs with results table
-  var results = filters.map((filter, i) => {
-    var alias = this.test_results.as('results' + i);
-    query = query.leftOuterJoin(alias, tests.id.eq(alias.test_id));
-    return alias;
+  var whereConditions = [];
+
+  var joinRuns = {};
+  filters.forEach(function(x) {
+    joinRuns[x.run] = 1;
+    if (x.status.startsWith("result_")) {
+      x.isRun = true;
+      x.target = x.status.slice("result_".length);
+      joinRuns[x.target] = 1;
+    } else {
+      x.isRun = false;
+      x.target = x.status;
+    }
   });
 
-  // JOINs with runs table
-  var runs = filters.map((filter, i) => {
-    var alias = this.test_runs.as('runs' + i);
-    query = query.innerJoin(alias, results[i].run_id.eq(alias.run_id));
-    return alias;
+  // JOINs with results and runs table
+  var aliases = {};
+  Object.keys(joinRuns).forEach((run) => {
+    var resultAlias = this.test_results.as('results ' + run);
+    query = query.leftOuterJoin(resultAlias, tests.id.eq(resultAlias.test_id));
+    var runAlias = this.test_runs.as('run ' + run);
+    query = query.innerJoin(runAlias, resultAlias.run_id.eq(runAlias.run_id));
+    aliases[run] = {
+      "runAlias": runAlias,
+      "resultAlias": resultAlias
+    };
+    whereConditions.push(runAlias.name.eq(run));
   });
 
   // WHERE clause
-  var whereConditions = [];
   filters.forEach((constraint, i) => {
-    whereConditions.push(runs[i].name.eq(constraint.run));
-    var status_op;
-    if (constraint.equality == "is") {
-      status_op = results[i].status.eq(constraint.status);
-    } else if (constraint.equality == "is not") {
-      status_op = results[i].status.neq(constraint.status);
-    }
-    whereConditions.push(status_op);
+    var target = constraint.isRun ?
+      aliases[constraint.target].resultAlias.status :
+      constraint.target;
+    var op = constraint.equality === "is" ? "eq" : "neq";
+    var condition = aliases[constraint.run].resultAlias.status[op](target);
+    whereConditions.push(condition);
   });
 
   // working on path filter
