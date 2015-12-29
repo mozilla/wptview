@@ -285,9 +285,8 @@ LovefieldService.prototype.selectAllSubtests = function() {
     exec();
 }
 
-LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters,
-                                                            minTestId, maxTestId, limit,
-                                                            testTypeFilter) {
+LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters, testTypeFilter,
+                                                            minTestId, maxTestId, limit) {
   var lovefield = this;
   var tests = this.tests;
   var test_results = this.test_results;
@@ -359,9 +358,9 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
   }
 
   // Working test type filter
-  if (testTypeFilter == "parent") {
+  if (testTypeFilter.type == "parent") {
       whereConditions.push(tests.parent_id.eq(null));
-  } else if (testTypeFilter == "child") {
+  } else if (testTypeFilter.type == "child") {
       whereConditions.push(tests.parent_id.neq(null));
   }
 

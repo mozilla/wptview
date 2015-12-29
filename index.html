@@ -54,9 +54,9 @@
   <section ng-hide="runs === null || !runs.length">
     <h2>Filter</h2>
     <form ng-disabled="busy">
-      <input type="radio" ng-model="testTypeFilter" value="parent">Parent
-      <input type="radio" ng-model="testTypeFilter" value="child">Child
-      <input type="radio" ng-model="testTypeFilter" value="both">Both
+      <input type="radio" ng-model="testTypeFilter.type" value="parent">Parent
+      <input type="radio" ng-model="testTypeFilter.type" value="child">Child
+      <input type="radio" ng-model="testTypeFilter.type" value="both">Both
     </form>
     <p>
       <label>

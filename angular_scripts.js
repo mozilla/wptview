@@ -92,9 +92,9 @@ app.factory('ResultsModel',function() {
                                      there is no upper limit.
     @param {(number)} limit - Number of tests to load.
    */
-  ResultsModel.prototype.getResults = function(filter, pathFilter, minTestId, maxTestId, limit, testTypeFilter) {
+  ResultsModel.prototype.getResults = function(filter, pathFilter, testTypeFilter, minTestId, maxTestId, limit) {
     return this.service.run("selectFilteredResults",
-                            [filter, pathFilter, minTestId, maxTestId, limit, testTypeFilter]);
+                            [filter, pathFilter, testTypeFilter, minTestId, maxTestId, limit]);
   }
 
   ResultsModel.prototype.removeResults = function(run_id) {
@@ -125,7 +125,9 @@ app.controller('wptviewController', function($scope, ResultsModel) {
       maxTestId: null,
       firstTestId: null
   }
-  $scope.testTypeFilter = "both";
+  $scope.testTypeFilter = {
+    type:"both"
+  }
   var runIndex = {};
   var resultsModel = new ResultsModel();
 
@@ -202,8 +204,8 @@ app.controller('wptviewController', function($scope, ResultsModel) {
       var maxTestId = $scope.resultsView.minTestId;
     }
 
-    resultsModel.getResults($scope.filter, $scope.pathFilter, minTestId, maxTestId,
-                            $scope.resultsView.limit, $scope.testTypeFilter)
+    resultsModel.getResults($scope.filter, $scope.pathFilter, $scope.testTypeFilter,
+                            minTestId, maxTestId, $scope.resultsView.limit)
       .then((results) => {
         if (!page) {
           $scope.resultsView.firstTestId = results[0].test_id;
