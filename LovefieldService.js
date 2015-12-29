@@ -285,7 +285,7 @@ LovefieldService.prototype.selectAllSubtests = function() {
     exec();
 }
 
-LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters,
+LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters, testTypeFilter,
                                                             minTestId, maxTestId, limit) {
   var lovefield = this;
   var tests = this.tests;
@@ -355,6 +355,13 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
   }
   if (pathOrConditions.exclude.length) {
     whereConditions.push(lf.op.not(lf.op.or.apply(lf.op.or, pathOrConditions.exclude)));
+  }
+
+  // Working test type filter
+  if (testTypeFilter.type == "parent") {
+      whereConditions.push(tests.parent_id.eq(null));
+  } else if (testTypeFilter.type == "child") {
+      whereConditions.push(tests.parent_id.neq(null));
   }
 
   orderByDir = lf.Order.ASC;

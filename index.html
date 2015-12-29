@@ -8,7 +8,6 @@
 
   <section>
     <h2>Log Files</h2>
-
     <p ng-if="runs == null">
       Loading...
     </p>
@@ -54,6 +53,11 @@
 
   <section ng-hide="runs === null || !runs.length">
     <h2>Filter</h2>
+    <form ng-disabled="busy">
+      <input type="radio" ng-model="testTypeFilter.type" value="parent">Parent
+      <input type="radio" ng-model="testTypeFilter.type" value="child">Child
+      <input type="radio" ng-model="testTypeFilter.type" value="both">Both
+    </form>
     <p>
       <label>
         By path:<br>
