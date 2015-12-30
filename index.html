@@ -101,7 +101,7 @@
             <option value="TIMEOUT">TIMEOUT</option>
             <option value="NOTRUN">NOTRUN</option>
             <option value="CRASH">CRASH</option>
-            <option ng-repeat="run in runs" value="{{ run.name }}">{{ run.name }}</option>
+            <option ng-repeat="run in runs | arrFilter: filter[$index].run" value="{{ run.name }}">Results from {{ run.name }}</option>
           </select>
         </form>
   </section>
