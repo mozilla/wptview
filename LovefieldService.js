@@ -286,7 +286,7 @@ LovefieldService.prototype.selectAllSubtests = function() {
 }
 
 LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters, testTypeFilter,
-                                                            minTestId, maxTestId, limit) {
+                                                            minTestId, maxTestId, limit, allRuns) {
   var statuses = ["PASS", "SKIP", "ERROR", "FAIL", "OK", "TIMEOUT", "NOTRUN", "CRASH"];
   var valid_statuses = {};
   statuses.forEach((status) => {
@@ -300,62 +300,38 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
   var query = lovefield.db_.
     select(tests.id.as("test_id")).
     from(tests);
-  var runs = [];
 
-  // JOINs with results table
-  var results = filters.map((filter, i) => {
-    if (valid_statuses.hasOwnProperty(filter.status)) {
-      var alias = this.test_results.as('results' + i);
-      query = query.leftOuterJoin(alias, tests.id.eq(alias.test_id));
-      return alias;
-    } else {
-      var alias = [
-        this.test_results.as('results'+i+'_a'),
-        this.test_results.as('results'+i+'_b')
-      ];
-      query = query.leftOuterJoin(alias[0], tests.id.eq(alias[0].test_id));
-      query = query.leftOuterJoin(alias[1], tests.id.eq(alias[1].test_id));
-      return alias;
-    }
-  });
-
-  // JOINs with runs table
-  var runs = filters.map((filter, i) => {
-    if (valid_statuses.hasOwnProperty(filter.status)) {
-      var alias = this.test_runs.as('runs' + i);
-      query = query.innerJoin(alias, results[i].run_id.eq(alias.run_id));
-      return alias;
-    } else {
-      var alias = [
-        this.test_runs.as('runs'+i+'_a'),
-        this.test_runs.as('runs'+i+'_b')
-      ];
-      query = query.innerJoin(alias[0], results[i][0].run_id.eq(alias[0].run_id));
-      query = query.innerJoin(alias[1], results[i][1].run_id.eq(alias[1].run_id));
-      return alias;
-    }
+  var whereConditions = [];
+  // JOINs with results and runs table
+  var aliases = {};
+  allRuns.forEach((run) => {
+    var resultAlias = this.test_results.as('results for ' + run.name);
+    query = query.leftOuterJoin(resultAlias, tests.id.eq(resultAlias.test_id));
+    var runAlias = this.test_runs.as('run ' + run.name);
+    query = query.innerJoin(runAlias, resultAlias.run_id.eq(runAlias.run_id));
+    aliases[run.name] = {
+      "runAlias": runAlias,
+      "resultAlias": resultAlias
+    };
+    whereConditions.push(runAlias.name.eq(run.name));
   });
 
   // WHERE clause
-  var whereConditions = [];
   filters.forEach((constraint, i) => {
     if (valid_statuses.hasOwnProperty(constraint.status)) {
-      whereConditions.push(runs[i].name.eq(constraint.run));
       var status_op;
       if (constraint.equality == "is") {
-        status_op = results[i].status.eq(constraint.status);
+        status_op = aliases[constraint.run].resultAlias.status.eq(constraint.status);
       } else if (constraint.equality == "is not") {
-        status_op = results[i].status.neq(constraint.status);
+        status_op = aliases[constraint.run].resultAlias.status.neq(constraint.status);
       }
       whereConditions.push(status_op);
     } else {
-      whereConditions.push(runs[i][0].name.eq(constraint.run));
-      whereConditions.push(runs[i][1].name.eq(constraint.status));
       var status_op;
       if (constraint.equality == "is") {
-        status_op = results[i][0].status.eq(results[i][1].status);
+        status_op = aliases[constraint.run].resultAlias.status.eq(aliases[constraint.status].resultAlias.status);
       } else if (constraint.equality == "is not") {
-        status_op = results[i][0].status.neq(results[i][1].status);
+        status_op = aliases[constraint.run].resultAlias.status.neq(aliases[constraint.status].resultAlias.status);
       }
       whereConditions.push(status_op);
     }
