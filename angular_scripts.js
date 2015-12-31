@@ -243,12 +243,20 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     $scope.filter.push({
       run : "",
       equality : "is",
-      status : ""
+      status : [""]
     });
   }
 
   $scope.deleteConstraint = function() {
     $scope.filter.pop();
+  }
+
+  $scope.addOrConstraint = function(index) {
+    $scope.filter[index].status.push("");
+  }
+
+  $scope.deleteOrConstraint = function(index) {
+    $scope.filter[index].status.pop();
   }
 
   $scope.addPath = function() {

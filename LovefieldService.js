@@ -299,18 +299,25 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
   var whereConditions = [];
 
   var joinRuns = {};
-  filters.forEach(function(x) {
-    joinRuns[x.run] = 1;
-    if (x.status.startsWith("result_")) {
-      x.isRun = true;
-      x.target = x.status.slice("result_".length);
-      joinRuns[x.target] = 1;
-    } else {
-      x.isRun = false;
-      x.target = x.status;
-    }
-  });
 
+  filters.forEach((x) => {
+    joinRuns[x.run] = 1;
+    x.isRun = [];
+    x.targets = [];
+    x.status.forEach((status) => {
+      if (status.startsWith("result_")) {
+        x.isRun.push(true);
+        var target = status.slice("result_".length);
+        joinRuns[target] = 1;
+        x.targets.push(target);
+      } else {
+        x.isRun.push(false);
+        var target = status;
+        x.targets.push(target);
+      }
+    });
+  });
+  console.log(filters);
   // JOINs with results and runs table
   var aliases = {};
   Object.keys(joinRuns).forEach((run) => {
@@ -327,11 +334,15 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
 
   // WHERE clause
   filters.forEach((constraint, i) => {
-    var target = constraint.isRun ?
-      aliases[constraint.target].resultAlias.status :
-      constraint.target;
+    var runImplicitConditions = [];
     var op = constraint.equality === "is" ? "eq" : "neq";
-    var condition = aliases[constraint.run].resultAlias.status[op](target);
+    var logical_op = constraint.equality === "is" ? "or" : "and";
+    constraint.targets.forEach((x, j) => {
+      var target = constraint.isRun[j] ? aliases[x].resultAlias.status : x;
+      runImplicitConditions.push(aliases[constraint.run].resultAlias.status[op](target));
+    });
+    var condition = lf.op[logical_op].apply(lf.op[logical_op], runImplicitConditions);
+    console.log(runImplicitConditions);
     whereConditions.push(condition);
   });
 
