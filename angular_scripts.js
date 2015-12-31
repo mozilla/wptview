@@ -10,6 +10,18 @@ app.directive('customOnChange', function() {
   };
 });
 
+app.filter('arrFilter', function() {
+  return function(collection, currentRun) {
+    var output = [];
+    collection.forEach((item) => {
+        if (currentRun != item.name) {
+            output.push(item);
+        }
+    });
+    return output;
+  }
+});
+
 function WorkerService(workerScript) {
   this.msg_id = 0;
   this.resolvers = {};
