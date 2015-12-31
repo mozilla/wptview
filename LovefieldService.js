@@ -286,12 +286,7 @@ LovefieldService.prototype.selectAllSubtests = function() {
 }
 
 LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters, testTypeFilter,
-                                                            minTestId, maxTestId, limit, allRuns) {
-  var statuses = ["PASS", "SKIP", "ERROR", "FAIL", "OK", "TIMEOUT", "NOTRUN", "CRASH"];
-  var valid_statuses = {};
-  statuses.forEach((status) => {
-    valid_statuses[status] = 1;
-  });
+                                                            minTestId, maxTestId, limit) {
   var lovefield = this;
   var tests = this.tests;
   var test_results = this.test_results;
@@ -302,39 +297,42 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
     from(tests);
 
   var whereConditions = [];
+
+  var joinRuns = {}
+  filters.forEach(function(x) {
+    joinRuns[x.run] = 1;
+    if (x.status.startsWith("result_")) {
+      x.isRun = true;
+      x.target = x.status.slice("result_".length);
+      joinRuns[x.target] = 1;
+    } else {
+      x.isRun = false;
+      x.target = x.status;
+    }
+  });
+
   // JOINs with results and runs table
   var aliases = {};
-  allRuns.forEach((run) => {
-    var resultAlias = this.test_results.as('results for ' + run.name);
+  Object.keys(joinRuns).forEach((run) => {
+    var resultAlias = this.test_results.as('results ' + run);
     query = query.leftOuterJoin(resultAlias, tests.id.eq(resultAlias.test_id));
-    var runAlias = this.test_runs.as('run ' + run.name);
+    var runAlias = this.test_runs.as('run ' + run);
     query = query.innerJoin(runAlias, resultAlias.run_id.eq(runAlias.run_id));
-    aliases[run.name] = {
+    aliases[run] = {
       "runAlias": runAlias,
       "resultAlias": resultAlias
     };
-    whereConditions.push(runAlias.name.eq(run.name));
+    whereConditions.push(runAlias.name.eq(run));
   });
 
   // WHERE clause
   filters.forEach((constraint, i) => {
-    if (valid_statuses.hasOwnProperty(constraint.status)) {
-      var status_op;
-      if (constraint.equality == "is") {
-        status_op = aliases[constraint.run].resultAlias.status.eq(constraint.status);
-      } else if (constraint.equality == "is not") {
-        status_op = aliases[constraint.run].resultAlias.status.neq(constraint.status);
-      }
-      whereConditions.push(status_op);
-    } else {
-      var status_op;
-      if (constraint.equality == "is") {
-        status_op = aliases[constraint.run].resultAlias.status.eq(aliases[constraint.status].resultAlias.status);
-      } else if (constraint.equality == "is not") {
-        status_op = aliases[constraint.run].resultAlias.status.neq(aliases[constraint.status].resultAlias.status);
-      }
-      whereConditions.push(status_op);
-    }
+    var target = constraint.isRun ?
+      aliases[constraint.target].resultAlias.status :
+      constraint.target;
+    var op = constraint.equality === "is" ? "eq" : "neq";
+    var condition = aliases[constraint.run].resultAlias.status[op](target);
+    whereConditions.push(condition);
   });
 
   // working on path filter
