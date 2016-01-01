@@ -215,9 +215,9 @@ app.controller('wptviewController', function($scope, ResultsModel) {
 
     $scope.busy = true;
 
-    if (page == "next") {
+    if (page === "next") {
       var minTestId = $scope.resultsView.maxTestId;
-    } else if (page == "prev") {
+    } else if (page === "prev") {
       var maxTestId = $scope.resultsView.minTestId;
     }
 

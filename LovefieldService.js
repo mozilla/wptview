@@ -122,7 +122,7 @@ LovefieldService.prototype.insertTests = function(testLogsRaw, currentTests) {
   testLogsRaw.forEach(function(testLog) {
     // First set of checks to ensure log has "action" set to "test_start"
     // and does not exist in table. (We don't want to add duplicates!)
-    if (testLog.action == "test_start" && !(testLog.test in currentTestMap)) {
+    if (testLog.action === "test_start" && !(testLog.test in currentTestMap)) {
       // Checks whether this test is already present in the insert query array.
       if (testsBeingAdded.hasOwnProperty(testLog.test)) {
         // Notify UI as this is an anomaly.
@@ -157,7 +157,7 @@ LovefieldService.prototype.insertTestResults = function(testLogsRaw, tests, test
   // in same select query.
   var testResultsBeingAdded = {};
   testLogsRaw.forEach(function(testLog) {
-    if (testLog.action == "test_end") {
+    if (testLog.action === "test_end") {
       // Duplicate found in same insert query array.
       if (!testResultsBeingAdded.hasOwnProperty(testLog.test)) {
         // Add it to set of keys
@@ -204,7 +204,7 @@ LovefieldService.prototype.insertSubtests = function(testLogsRaw, tests, current
   var subtestsBeingAdded = {};
   testLogsRaw.forEach(function(testLog) {
     // Checking whether subtest hasn't been inserted previously to our test table.
-    if (testLog.action == "test_status" && !(currentSubtestMap.hasOwnProperty(testLog.test) && currentSubtestMap[testLog.test].hasOwnProperty(testLog.subtest))) {
+    if (testLog.action === "test_status" && !(currentSubtestMap.hasOwnProperty(testLog.test) && currentSubtestMap[testLog.test].hasOwnProperty(testLog.subtest))) {
       // Checking whether this subtest has been added previously in the same insert query.
       if (subtestsBeingAdded.hasOwnProperty(testLog.test) && subtestsBeingAdded[testLog.test].hasOwnProperty(testLog.subtest)) {
         duplicates.push({test: testLog.test, subtest: testLog.subtest});
@@ -242,7 +242,7 @@ LovefieldService.prototype.insertSubtestResults = function(testLogsRaw, subtests
   var test_results = this.test_results;
   var subtestResultsBeingAdded = {};
   testLogsRaw.forEach(function(testLog) {
-    if (testLog.action == "test_status") {
+    if (testLog.action === "test_status") {
       if (!(subtestResultsBeingAdded.hasOwnProperty(testLog.test) && subtestResultsBeingAdded[testLog.test].hasOwnProperty(testLog.subtest))) {
         if (!subtestResultsBeingAdded.hasOwnProperty(testLog.test)) {
           subtestResultsBeingAdded[testLog.test] = {};
@@ -344,16 +344,16 @@ LovefieldService.prototype.selectFilteredResults = function(filter,
     pathFilter.path = pathFilter.path.replace("\\", "/");
     var path_regex = escapeRegExp(pathFilter.path);
     var choice = pathFilter.choice.split(":");
-    if (choice[1] == "start") {
+    if (choice[1] === "start") {
       if (pathFilter.path.charAt(0) != "/") {
         path_regex = escapeRegExp("/" + pathFilter.path);
       }
       path_regex = "^" + path_regex;
-    } else if (choice[1] == "end") {
+    } else if (choice[1] === "end") {
       path_regex = path_regex + "$";
     }
     path_regex = new RegExp(path_regex, 'i');
-    if (choice[0] == "include") {
+    if (choice[0] === "include") {
       pathOrConditions.include.push(tests.test.match(path_regex));
     } else {
       pathOrConditions.exclude.push(tests.test.match(path_regex));
@@ -369,9 +369,9 @@ LovefieldService.prototype.selectFilteredResults = function(filter,
   }
 
   // Working test type filter
-  if (filter.testTypeFilter.type == "parent") {
+  if (filter.testTypeFilter.type === "parent") {
       whereConditions.push(tests.parent_id.eq(null));
-  } else if (filter.testTypeFilter.type == "child") {
+  } else if (filter.testTypeFilter.type === "child") {
       whereConditions.push(tests.parent_id.neq(null));
   }
 
