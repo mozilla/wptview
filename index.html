@@ -8,7 +8,7 @@
 
   <section>
     <h2>Log Files</h2>
-    <p ng-if="runs == null">
+    <p ng-if="runs === null">
       Loading...
     </p>
 
@@ -109,7 +109,7 @@
   <section id="results" ng-hide="busy || runs === null || !runs.length">
     <h2>Results</h2>
     <form>
-      Show <input ng-model="resultsView.limit" type="number"> results. <button ng-click="fillTable(0)" ng-disabled="busy || runs == null || runs.length === 0">Load</button>
+      Show <input ng-model="resultsView.limit" type="number"> results. <button ng-click="fillTable(0)" ng-disabled="busy || runs === null || runs.length === 0">Load</button>
     </form>
     <table ng-table="resultsTable" id="resultsTable" ng-if="results !== null">
       <tr>
@@ -128,8 +128,8 @@
         <td ng-repeat-end class="result {{run.status}}">{{ run.status }}</td>
       </tr>
     </table>
-    <button ng-if="results !== null" ng-click="fillTable('prev')" ng-disabled="busy || runs == null || runs.length === 0 || resultsView.firstPage">Previous</button>
-    <button ng-if="results !== null" ng-click="fillTable('next')" ng-disabled="busy || runs == null || runs.length === 0 || resultsView.lastPage">Next</button>
+    <button ng-if="results !== null" ng-click="fillTable('prev')" ng-disabled="busy || runs === null || runs.length === 0 || resultsView.firstPage">Previous</button>
+    <button ng-if="results !== null" ng-click="fillTable('next')" ng-disabled="busy || runs === null || runs.length === 0 || resultsView.lastPage">Next</button>
   </section>
   <p>
     {{ warning_message() }}

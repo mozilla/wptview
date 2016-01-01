@@ -138,9 +138,9 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.filter = {
    "statusFilter": [],
    "pathFilter": [],
-   "testTypeFilter": { 
-			type:"both"
-		     }	
+   "testTypeFilter": {
+     type:"both"
+   }
   } 
   var runIndex = {};
   var resultsModel = new ResultsModel();
@@ -218,8 +218,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
       var maxTestId = $scope.resultsView.minTestId;
     }
 
-    resultsModel.getResults($scope.filter,
-                            minTestId, maxTestId, $scope.resultsView.limit)
+    resultsModel.getResults($scope.filter, minTestId, maxTestId, $scope.resultsView.limit)
       .then((results) => {
         if (!page) {
           $scope.resultsView.firstTestId = results[0].test_id;
