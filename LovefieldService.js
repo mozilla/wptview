@@ -285,7 +285,7 @@ LovefieldService.prototype.selectAllSubtests = function() {
     exec();
 }
 
-LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters, testTypeFilter,
+LovefieldService.prototype.selectFilteredResults = function(filter,
                                                             minTestId, maxTestId, limit) {
   var lovefield = this;
   var tests = this.tests;
@@ -299,7 +299,7 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
   var whereConditions = [];
 
   var joinRuns = {};
-  filters.forEach(function(x) {
+  filter.statusFilter.forEach(function(x) {
     joinRuns[x.run] = 1;
     if (x.status.startsWith("result_")) {
       x.isRun = true;
@@ -326,7 +326,7 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
   });
 
   // WHERE clause
-  filters.forEach((constraint, i) => {
+  filter.statusFilter.forEach((constraint, i) => {
     var target = constraint.isRun ?
       aliases[constraint.target].resultAlias.status :
       constraint.target;
@@ -340,7 +340,7 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
     include: [],
     exclude: []
   }
-  pathFilters.forEach((pathFilter) => {
+  filter.pathFilter.forEach((pathFilter) => {
     pathFilter.path = pathFilter.path.replace("\\", "/");
     var path_regex = escapeRegExp(pathFilter.path);
     var choice = pathFilter.choice.split(":");
@@ -369,9 +369,9 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
   }
 
   // Working test type filter
-  if (testTypeFilter.type == "parent") {
+  if (filter.testTypeFilter.type == "parent") {
       whereConditions.push(tests.parent_id.eq(null));
-  } else if (testTypeFilter.type == "child") {
+  } else if (filter.testTypeFilter.type == "child") {
       whereConditions.push(tests.parent_id.neq(null));
   }
 

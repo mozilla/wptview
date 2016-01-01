@@ -140,6 +140,11 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.testTypeFilter = {
     type:"both"
   }
+  var filter = {
+   "statusFilter": $scope.filter,
+   "pathFilter": $scope.pathFilter,
+   "testTypeFilter": $scope.testTypeFilter
+  } 
   var runIndex = {};
   var resultsModel = new ResultsModel();
 
@@ -216,7 +221,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
       var maxTestId = $scope.resultsView.minTestId;
     }
 
-    resultsModel.getResults($scope.filter, $scope.pathFilter, $scope.testTypeFilter,
+    resultsModel.getResults(filter,
                             minTestId, maxTestId, $scope.resultsView.limit)
       .then((results) => {
         if (!page) {
@@ -240,7 +245,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   }
 
   $scope.addConstraint = function() {
-    $scope.filter.push({
+    filter.statusFilter.push({
       run : "",
       equality : "is",
       status : ""
@@ -248,18 +253,18 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   }
 
   $scope.deleteConstraint = function() {
-    $scope.filter.pop();
+    filter.statusFilter.pop();
   }
 
   $scope.addPath = function() {
-    $scope.pathFilter.push({
+    filter.pathFilter.push({
       choice: "include:start",
       path: ""
     });
   }
 
   $scope.deletePath = function() {
-    $scope.pathFilter.pop();
+    filter.pathFilter.pop();
   }
 
   $scope.warning_message = function() {
