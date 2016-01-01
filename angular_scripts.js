@@ -104,9 +104,9 @@ app.factory('ResultsModel',function() {
                                      there is no upper limit.
     @param {(number)} limit - Number of tests to load.
    */
-  ResultsModel.prototype.getResults = function(filter, pathFilter, testTypeFilter, minTestId, maxTestId, limit) {
+  ResultsModel.prototype.getResults = function(filter, minTestId, maxTestId, limit) {
     return this.service.run("selectFilteredResults",
-                            [filter, pathFilter, testTypeFilter, minTestId, maxTestId, limit]);
+                            [filter, minTestId, maxTestId, limit]);
   }
 
   ResultsModel.prototype.removeResults = function(run_id) {
