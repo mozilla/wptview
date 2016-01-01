@@ -92,20 +92,9 @@
             <option value="is">is</option>
             <option value="is not">is not</option>
           </select>
-          <select ng-disabled="busy" ng-model="filter[$index].status[0]">
-            <option value="PASS">PASS</option>
-            <option value="SKIP">SKIP</option>
-            <option value="ERROR">ERROR</option>
-            <option value="FAIL">FAIL</option>
-            <option value="OK">OK</option>
-            <option value="TIMEOUT">TIMEOUT</option>
-            <option value="NOTRUN">NOTRUN</option>
-            <option value="CRASH">CRASH</option>
-            <option ng-repeat="run in runs | arrFilter: filter[$index].run" value="result_{{ run.name }}">Results from {{ run.name }}</option>
-          </select>
-          <label ng-if="filter[$parent.$index].equality == 'is'" ng-repeat-start="j in range(1, filter[$index].status.length)">OR</label>
-          <label ng-if="filter[$parent.$index].equality == 'is not'">AND</label>
-          <select ng-repeat-end ng-disabled="busy" ng-model="filter[$parent.$index].status[$index+1]">
+          <label ng-if="filter[$parent.$index].equality == 'is' && $index != 0" ng-repeat-start="j in range(1, filter[$index].status.length+1)">OR</label>
+          <label ng-if="filter[$parent.$index].equality == 'is not' && $index != 0">AND</label>
+          <select ng-repeat-end ng-disabled="busy" ng-model="filter[$parent.$index].status[$index]">
             <option value="PASS">PASS</option>
             <option value="SKIP">SKIP</option>
             <option value="ERROR">ERROR</option>
