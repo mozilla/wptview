@@ -124,8 +124,6 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.results = null;
   $scope.warnings = [];
   $scope.showImport = false;
-  $scope.filter = [];
-  $scope.pathFilter = [];
   $scope.busy = true;
   $scope.runs = null;
   $scope.upload = {};
@@ -137,13 +135,12 @@ app.controller('wptviewController', function($scope, ResultsModel) {
       maxTestId: null,
       firstTestId: null
   }
-  $scope.testTypeFilter = {
-    type:"both"
-  }
-  var filter = {
-   "statusFilter": $scope.filter,
-   "pathFilter": $scope.pathFilter,
-   "testTypeFilter": $scope.testTypeFilter
+  $scope.filter = {
+   "statusFilter":[],
+   "pathFilter": [],
+   "testTypeFilter":{ 
+			type:"both"
+		     }	
   } 
   var runIndex = {};
   var resultsModel = new ResultsModel();
