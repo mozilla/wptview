@@ -8,7 +8,7 @@
 
   <section>
     <h2>Log Files</h2>
-    <p ng-if="runs == null">
+    <p ng-if="runs === null">
       Loading...
     </p>
 
@@ -54,19 +54,19 @@
   <section ng-hide="runs === null || !runs.length">
     <h2>Filter</h2>
     <form ng-disabled="busy">
-      <input type="radio" ng-model="testTypeFilter.type" value="parent">Parent
-      <input type="radio" ng-model="testTypeFilter.type" value="child">Child
-      <input type="radio" ng-model="testTypeFilter.type" value="both">Both
+      <input type="radio" ng-model="filter.testTypeFilter.type" value="parent">Parent
+      <input type="radio" ng-model="filter.testTypeFilter.type" value="child">Child
+      <input type="radio" ng-model="filter.testTypeFilter.type" value="both">Both
     </form>
     <p>
       <label>
         By path:<br>
         <form>
            <button ng-disabled="busy" ng-click="addPath()">Add</button>
-           <button ng-disabled="busy || pathFilter.length === 0" ng-click="deletePath()">Delete</button>
+           <button ng-disabled="busy || filter.pathFilter.length === 0" ng-click="deletePath()">Delete</button>
         </form>
-        <form ng-repeat="i in range(1, pathFilter.length+1)">
-          <select ng-disabled="busy" ng-model="pathFilter[$index].choice">
+        <form ng-repeat="i in range(1, filter.pathFilter.length+1)">
+          <select ng-disabled="busy" ng-model="filter.pathFilter[$index].choice">
             <option value="include:start">starts with</option>
             <option value="include:end">ends with</option>
             <option value="include:contains">contains</option>
@@ -74,7 +74,7 @@
             <option value="exclude:end">does not end with</option>
             <option value="exclude:contains">does not contain</option>
           </select>
-          <input type="text" ng-model="pathFilter[$index].path">
+          <input type="text" ng-model="filter.pathFilter[$index].path">
         </form>
     </p>
     <p>
@@ -82,17 +82,17 @@
         By result:<br>
         <form>
           <button ng-disabled="busy" ng-click="addConstraint()">Add</button>
-          <button ng-disabled="busy || filter.length === 0" ng-click="deleteConstraint()">Delete</button>
+          <button ng-disabled="busy || filter.statusFilter.length === 0" ng-click="deleteConstraint()">Delete</button>
         </form>
-        <form ng-repeat="i in range(1, filter.length+1)">
-          <select ng-disabled="busy" ng-model="filter[$index].run">
+        <form ng-repeat="i in range(1, filter.statusFilter.length+1)">
+          <select ng-disabled="busy" ng-model="filter.statusFilter[$index].run">
             <option ng-repeat="run in runs" value="{{ run.name }}">{{ run.name }}</option>
           </select>
-          <select ng-disabled="busy" ng-model="filter[$index].equality">
+          <select ng-disabled="busy" ng-model="filter.statusFilter[$index].equality">
             <option value="is">is</option>
             <option value="is not">is not</option>
           </select>
-          <select ng-disabled="busy" ng-model="filter[$index].status">
+          <select ng-disabled="busy" ng-model="filter.statusFilter[$index].status">
             <option value="PASS">PASS</option>
             <option value="SKIP">SKIP</option>
             <option value="ERROR">ERROR</option>
@@ -101,7 +101,7 @@
             <option value="TIMEOUT">TIMEOUT</option>
             <option value="NOTRUN">NOTRUN</option>
             <option value="CRASH">CRASH</option>
-            <option ng-repeat="run in runs | arrFilter: filter[$index].run" value="result_{{ run.name }}">Results from {{ run.name }}</option>
+            <option ng-repeat="run in runs | arrFilter: filter.statusFilter[$index].run" value="result_{{ run.name }}">Results from {{ run.name }}</option>
           </select>
         </form>
   </section>
@@ -109,7 +109,7 @@
   <section id="results" ng-hide="busy || runs === null || !runs.length">
     <h2>Results</h2>
     <form>
-      Show <input ng-model="resultsView.limit" type="number"> results. <button ng-click="fillTable(0)" ng-disabled="busy || runs == null || runs.length === 0">Load</button>
+      Show <input ng-model="resultsView.limit" type="number"> results. <button ng-click="fillTable(0)" ng-disabled="busy || runs === null || runs.length === 0">Load</button>
     </form>
     <table ng-table="resultsTable" id="resultsTable" ng-if="results !== null">
       <tr>
@@ -128,8 +128,8 @@
         <td ng-repeat-end class="result {{run.status}}">{{ run.status }}</td>
       </tr>
     </table>
-    <button ng-if="results !== null" ng-click="fillTable('prev')" ng-disabled="busy || runs == null || runs.length === 0 || resultsView.firstPage">Previous</button>
-    <button ng-if="results !== null" ng-click="fillTable('next')" ng-disabled="busy || runs == null || runs.length === 0 || resultsView.lastPage">Next</button>
+    <button ng-if="results !== null" ng-click="fillTable('prev')" ng-disabled="busy || runs === null || runs.length === 0 || resultsView.firstPage">Previous</button>
+    <button ng-if="results !== null" ng-click="fillTable('next')" ng-disabled="busy || runs === null || runs.length === 0 || resultsView.lastPage">Next</button>
   </section>
   <p>
     {{ warning_message() }}
