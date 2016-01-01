@@ -285,8 +285,7 @@ LovefieldService.prototype.selectAllSubtests = function() {
     exec();
 }
 
-LovefieldService.prototype.selectFilteredResults = function(filter,
-                                                            minTestId, maxTestId, limit) {
+LovefieldService.prototype.selectFilteredResults = function(filter, minTestId, maxTestId, limit) {
   var lovefield = this;
   var tests = this.tests;
   var test_results = this.test_results;

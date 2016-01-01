@@ -136,12 +136,12 @@ app.controller('wptviewController', function($scope, ResultsModel) {
       firstTestId: null
   }
   $scope.filter = {
-   "statusFilter": [],
-   "pathFilter": [],
-   "testTypeFilter": {
-     type:"both"
-   }
-  } 
+    "statusFilter": [],
+    "pathFilter": [],
+    "testTypeFilter": {
+      type:"both"
+    }
+  }
   var runIndex = {};
   var resultsModel = new ResultsModel();
 
