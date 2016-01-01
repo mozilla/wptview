@@ -298,18 +298,23 @@ LovefieldService.prototype.selectFilteredResults = function(filter, minTestId, m
   var whereConditions = [];
 
   var joinRuns = {};
-  filter.statusFilter.forEach(function(x) {
+  filter.statusFilter.forEach((x) => {
     joinRuns[x.run] = 1;
-    if (x.status.startsWith("result_")) {
-      x.isRun = true;
-      x.target = x.status.slice("result_".length);
-      joinRuns[x.target] = 1;
-    } else {
-      x.isRun = false;
-      x.target = x.status;
-    }
+    x.isRun = [];
+    x.targets = [];
+    x.status.forEach((status) => {
+      if (status.startsWith("result_")) {
+        x.isRun.push(true);
+        var target = status.slice("result_".length);
+        joinRuns[target] = 1;
+        x.targets.push(target);
+      } else {
+        x.isRun.push(false);
+        var target = status;
+        x.targets.push(target);
+      }
+    });
   });
-
   // JOINs with results and runs table
   var aliases = {};
   Object.keys(joinRuns).forEach((run) => {
@@ -326,11 +331,15 @@ LovefieldService.prototype.selectFilteredResults = function(filter, minTestId, m
 
   // WHERE clause
   filter.statusFilter.forEach((constraint, i) => {
-    var target = constraint.isRun ?
-      aliases[constraint.target].resultAlias.status :
-      constraint.target;
+    var runConditions = [];
     var op = constraint.equality === "is" ? "eq" : "neq";
-    var condition = aliases[constraint.run].resultAlias.status[op](target);
+    var booleanOp = constraint.equality === "is" ? "or" : "and";
+    constraint.targets.forEach((x, j) => {
+      var target = constraint.isRun[j] ? aliases[x].resultAlias.status : x;
+      runConditions.push(aliases[constraint.run].resultAlias.status[op](target));
+    });
+    var condition = lf.op[booleanOp].apply(lf.op[booleanOp], runConditions);
+    console.log(runConditions);
     whereConditions.push(condition);
   });
 
