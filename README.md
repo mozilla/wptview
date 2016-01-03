@@ -6,7 +6,7 @@ This app runs on a local server. You may set up a local server by using Python's
 
 `python -m SimpleHTTPServer 8000`
 
-Go to a browser and visit `localhost:8000`. WPT Viewer should start.
+Go to a browser (use Google Chrome) and visit `localhost:8000`. WPT Viewer should start.
 
 WPT Viewer needs to ingest some web-platform-tests mozlog files to get up and running. A good place to find mozlog files is Mozilla's [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=mozilla-inbound) for mozilla-inbound.
 These files are generally found under "Job Details" after clicking a failed job (marked in orange) and have are generally named wpt_raw.log or simply raw.log.
