@@ -29,6 +29,8 @@ all_checks = []
 errors = False
 
 # trailing whitespace check
+# Here, we check for the leading whitespaces(tabs/spaces) after code
+# These are unnecessary and need to be removed
 def trailing_whitespace_function(file_path):
     global errors
     with open(file_path) as file_ptr:
@@ -45,6 +47,7 @@ all_checks.append(trailing_whitespace_check)
 # add another check below
 
 # Main
+# Directory traversal and testing of files needed
 for check in all_checks:
     for base_dir in check.root_dirs:
         for root, dirs, file_names in walk(base_dir):
