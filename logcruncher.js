@@ -34,10 +34,7 @@ function testsFilter(parsedLine) {
 
 function readFile(file) {
   return new Promise(function(resolve, reject) {
-    var reader = new FileReader();
-    reader.onload = function(progressEvent) {
-      resolve(this.result);
-    };
-    reader.readAsText(file, "UTF-8");
+    var reader = new FileReaderSync();
+    resolve(reader.readAsText(file, "UTF-8"));
   });
 }
