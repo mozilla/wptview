@@ -220,13 +220,18 @@ app.controller('wptviewController', function($scope, ResultsModel) {
 
     resultsModel.getResults($scope.filter, minTestId, maxTestId, $scope.resultsView.limit)
       .then((results) => {
-        if (!page) {
-          $scope.resultsView.firstTestId = results[0].test_id;
+        if (results.length) {
+          if (!page) {
+            $scope.resultsView.firstTestId = results[0].test_id;
+          }
+          $scope.resultsView.lastPage = results.length < $scope.resultsView.limit;
+          $scope.resultsView.firstPage = results[0].test_id === $scope.resultsView.firstTestId;
+          $scope.resultsView.minTestId = results[0].test_id;
+          $scope.resultsView.maxTestId = results[results.length - 1].test_id;
+        } else {
+          // We want to disable NEXT when we are on the last page
+          $scope.resultsView.lastPage = true;
         }
-        $scope.resultsView.lastPage = results.length < $scope.resultsView.limit;
-        $scope.resultsView.firstPage = results[0].test_id === $scope.resultsView.firstTestId;
-        $scope.resultsView.minTestId = results[0].test_id;
-        $scope.resultsView.maxTestId = results[results.length - 1].test_id;
         var finalResults = organizeResults(results);
         $scope.results = finalResults;
         $scope.busy = false;
