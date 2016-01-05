@@ -1,9 +1,20 @@
+importScripts("workerApi.js");
+
+onmessage = messageAdapter(new LogReader());
+
+function LogReader() {}
+
+LogReader.prototype.read = function(file) {
+  return readFile(file)
+    .then((logData) => {return logCruncher(logData, testsFilter)});
+}
+
 function logCruncher(rawtext, filter) {
   return new Promise(function (resolve, reject) {
     var JSONArray = [];
     var lines = rawtext.split('\n');
-    for (var i=0; i<lines.length; i++) {
-      if (lines[i]=="") {
+    for (var i = 0; i < lines.length; i++) {
+      if (lines[i] === "") {
         continue;
       }
       var json = JSON.parse(lines[i]);
@@ -18,7 +29,7 @@ function logCruncher(rawtext, filter) {
 function testsFilter(parsedLine) {
   var pattr = /^test_/;
   var pattr2 = /^(?:error)|(?:critical)/i;
-  return (pattr.test(parsedLine.action) || (parsedLine.action=="log" && pattr2.test(parsedLine.level)));
+  return (pattr.test(parsedLine.action) || (parsedLine.action === "log" && pattr2.test(parsedLine.level)));
 }
 
 function readFile(file) {
@@ -29,16 +40,4 @@ function readFile(file) {
     };
     reader.readAsText(file, "UTF-8");
   });
-}
-
-function updateWarnings(test, subtest) {
-    var scope = angular.element(document.getElementById("wptview")).scope();
-    scope.$apply(function() {
-        scope.warnings.push({test: test, subtest: subtest});
-    })
-}
-
-// http://stackoverflow.com/questions/3446170/escape-string-for-use-in-javascript-regex/6969486#6969486
-function escapeRegExp(str) {
-  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 }

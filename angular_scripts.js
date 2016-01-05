@@ -1,6 +1,5 @@
 var app = angular.module('wptview', []);
 
-
 app.directive('customOnChange', function() {
   return {
     restrict: 'A',
@@ -11,9 +10,50 @@ app.directive('customOnChange', function() {
   };
 });
 
+app.filter('arrFilter', function() {
+  return function(collection, currentRun) {
+    var output = [];
+    collection.forEach((item) => {
+        if (currentRun != item.name) {
+            output.push(item);
+        }
+    });
+    return output;
+  }
+});
+
+function WorkerService(workerScript) {
+  this.msg_id = 0;
+  this.resolvers = {};
+
+  this.worker = new Worker(workerScript);
+  this.worker.onmessage = function(event) {
+    var msg_id = event.data[0];
+    var data = event.data[1];
+    if (!this.resolvers.hasOwnProperty(msg_id)) {
+      throw Error("Unexpected message " + msg_id);
+    }
+    resolve = this.resolvers[msg_id];
+    delete this.resolvers[msg_id];
+    console.log(data);
+    resolve(data);
+  }.bind(this);
+}
+
+WorkerService.prototype.run = function(command, data) {
+  var data = data || [];
+  var msg = [this.msg_id++, command, data];
+  this.worker.postMessage(msg);
+  return new Promise((resolve) => {
+    console.log("Adding resolver " + msg[0]);
+    this.resolvers[msg[0]] = resolve;
+  });
+}
+
 app.factory('ResultsModel',function() {
   var ResultsModel = function() {
-    this.service = new LovefieldService();
+    this.service = new WorkerService("LovefieldService.js");
+    this.logReader = new WorkerService("logcruncher.js");
   }
 
   ResultsModel.prototype.addResultsFromLogs = function (file, runName) {
@@ -21,40 +61,60 @@ app.factory('ResultsModel',function() {
     var resultData = null;
     var testData = null;
     var testRunData = null;
-    return readFile(file)
-      .then((logData) => {return logCruncher(logData, testsFilter)})
+    var duplicates = null;
+    return this.logReader.run("read", [file])
       .then((data) => {resultData = data})
-      .then(() => {return lovefield.getDbConnection()})
       // Filling the test_runs table
-      .then(() => {return lovefield.selectParticularRun(runName)})
-      .then((testRuns) => {return lovefield.insertTestRuns(runName, testRuns)})
+      .then(() => {return lovefield.run("selectParticularRun", [runName])})
+      .then((testRuns) => {return lovefield.run("insertTestRuns", [runName, testRuns])})
       // Selecting current tests table, adding extra entries only
-      .then((testRuns) => {testRunData = testRuns; return lovefield.selectAllParentTests()})
-      .then((parentTests) => {return lovefield.insertTests(resultData, parentTests)})
-      .then(() => {return lovefield.selectAllParentTests()})
+      .then((testRuns) => {testRunData = testRuns;
+                           return lovefield.run("selectAllParentTests")})
+      .then((parentTests) => {return lovefield.run("insertTests", [resultData, parentTests])})
+      .then((insertData) => {
+        duplicates = insertData[1];
+        return lovefield.run("selectAllParentTests")
+      })
       // populating results table with parent test results
-      .then((tests) => {testData = tests; return lovefield.insertTestResults(resultData, testData, testRunData)})
+      .then((tests) => {testData = tests;
+                        return lovefield.run("insertTestResults",
+                                             [resultData, testData, testRunData])})
       // add subtests to tests table
-      .then(() => {return lovefield.selectAllSubtests()})
-      .then((subtests) => {return lovefield.insertSubtests(resultData, testData, subtests)})
-      .then(() => {return lovefield.selectAllSubtests()})
+      .then(() => {return lovefield.run("selectAllSubtests")})
+      .then((subtests) => {return lovefield.run("insertSubtests",
+                                                [resultData, testData, subtests])})
+      .then((subtestData) => {duplicates = duplicates.concat(subtestData[1]);
+                              return lovefield.run("selectAllSubtests")})
       // adding subtest results
-      .then((subtests) => {return lovefield.insertSubtestResults(resultData, subtests, testRunData)})
+      .then((subtests) => {return lovefield.run("insertSubtestResults",
+                                                [resultData, subtests, testRunData])})
+      .then(() => duplicates);
   }
 
-  ResultsModel.prototype.getResults = function(filter, pathFilter, minTestId, maxTestId, limit) {
-    var lovefield = this.service;
-    return lovefield.selectFilteredResults(filter, pathFilter, minTestId, maxTestId, limit);
+  /*
+    Load the results of a specified number of tests, ordered by test id, either taking all
+    results above a lower limit test id, all results below an upper limit id, or all results
+    starting from the first test.
+    Results may be filtered by various filters.
+    @param {Object[]} filter - Array of filter definitions for the allowed test results.
+    @param {} pathFilter - Array if filter definitions for the allowed test names.
+    @param {(number|null)} minTestId - Exclusive lower bound on the test ID to load, or null if
+                                     there is no lower limit.
+    @param {(number|null)} maxTestId - Exclusive upper bound on the test ID to load, or null if
+                                     there is no upper limit.
+    @param {(number)} limit - Number of tests to load.
+   */
+  ResultsModel.prototype.getResults = function(filter, minTestId, maxTestId, limit) {
+    return this.service.run("selectFilteredResults",
+                            [filter, minTestId, maxTestId, limit]);
   }
 
   ResultsModel.prototype.removeResults = function(run_id) {
-    var lovefield = this.service;
-    return lovefield.deleteEntries(run_id);
+    return this.service.run("deleteEntries", [run_id]);
   }
 
   ResultsModel.prototype.getRuns = function() {
-    var lovefield = this.service;
-    return lovefield.getRuns();
+    return this.service.run("getRuns");
   }
 
   return ResultsModel;
@@ -63,18 +123,25 @@ app.factory('ResultsModel',function() {
 app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.results = null;
   $scope.warnings = [];
-  $scope.isFileEmpty = true;
   $scope.showImport = false;
-  $scope.filter = [];
-  $scope.pathFilter = [];
   $scope.busy = true;
   $scope.runs = null;
   $scope.upload = {};
-  $scope.resultsView = {limit: 50,
-                        firstPage: true,
-                        lastPage: false,
-                        minTestId: null,
-                        maxTestId: null}
+  $scope.resultsView = {
+      limit: 50,
+      firstPage: true,
+      lastPage: false,
+      minTestId: null,
+      maxTestId: null,
+      firstTestId: null
+  }
+  $scope.filter = {
+    "statusFilter": [],
+    "pathFilter": [],
+    "testTypeFilter": {
+      type:"both"
+    }
+  }
   var runIndex = {};
   var resultsModel = new ResultsModel();
 
@@ -95,6 +162,12 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     $scope.$apply();
   });
 
+  function updateWarnings(duplicates) {
+    $scope.$apply(function() {
+      $scope.warnings = duplicates;
+    })
+  }
+
   $scope.range = function(min, max, step) {
       step = step || 1;
       var input = [];
@@ -109,6 +182,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     var evt = $scope.fileEvent;
     var file = evt.target.files[0];
     resultsModel.addResultsFromLogs(file, $scope.upload.runName)
+    .then((duplicates) => updateWarnings(duplicates))
     .then(updateRuns)
     .then(() => {
       $scope.isFileEmpty = true;
@@ -135,24 +209,32 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.fillTable = function(page) {
     var minTestId = null;
     var maxTestId = null;
-    if (page == "next") {
+
+    $scope.busy = true;
+
+    if (page === "next") {
       var minTestId = $scope.resultsView.maxTestId;
-    } else if (page == "prev") {
+    } else if (page === "prev") {
       var maxTestId = $scope.resultsView.minTestId;
     }
 
-    resultsModel.getResults($scope.filter, $scope.pathFilter, minTestId, maxTestId,
-                            $scope.resultsView.limit)
+    resultsModel.getResults($scope.filter, minTestId, maxTestId, $scope.resultsView.limit)
       .then((results) => {
-        if (!page) {
-          $scope.resultsView.firstTestId = results[0].test_id;
+        if (results.length) {
+          if (!page) {
+            $scope.resultsView.firstTestId = results[0].test_id;
+          }
+          $scope.resultsView.lastPage = results.length < $scope.resultsView.limit;
+          $scope.resultsView.firstPage = results[0].test_id === $scope.resultsView.firstTestId;
+          $scope.resultsView.minTestId = results[0].test_id;
+          $scope.resultsView.maxTestId = results[results.length - 1].test_id;
+        } else {
+          // We want to disable NEXT when we are on the last page
+          $scope.resultsView.lastPage = true;
         }
-        $scope.resultsView.lastPage = results.length < $scope.resultsView.limit;
-        $scope.resultsView.firstPage = results[0].test_id === $scope.resultsView.firstTestId;
-        $scope.resultsView.minTestId = results[0].test_id;
-        $scope.resultsView.maxTestId = results[results.length - 1].test_id;
         var finalResults = organizeResults(results);
         $scope.results = finalResults;
+        $scope.busy = false;
         $scope.$apply();
       });
   }
@@ -164,26 +246,34 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   }
 
   $scope.addConstraint = function() {
-    $scope.filter.push({
+    $scope.filter.statusFilter.push({
       run : "",
       equality : "is",
-      status : ""
+      status : [""]
     });
   }
 
   $scope.deleteConstraint = function() {
-    $scope.filter.pop();
+    $scope.filter.statusFilter.pop();
+  }
+
+  $scope.addOrConstraint = function(index) {
+    $scope.filter.statusFilter[index].status.push("");
+  }
+
+  $scope.deleteOrConstraint = function(index) {
+    $scope.filter.statusFilter[index].status.pop();
   }
 
   $scope.addPath = function() {
-    $scope.pathFilter.push({
+    $scope.filter.pathFilter.push({
       choice: "include:start",
       path: ""
     });
   }
 
   $scope.deletePath = function() {
-    $scope.pathFilter.pop();
+    $scope.filter.pathFilter.pop();
   }
 
   $scope.warning_message = function() {

@@ -1,4 +1,14 @@
-var LovefieldService = function() {
+importScripts("workerApi.js");
+importScripts("lf_scripts/lovefield.js");
+
+onmessage = messageAdapter(new LovefieldService());
+
+// http://stackoverflow.com/questions/3446170/escape-string-for-use-in-javascript-regex/6969486#6969486
+function escapeRegExp(str) {
+  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+}
+
+function LovefieldService() {
   // Following member variables are initialized within getDbConnection().
   this.db_ = null;
   this.test_runs = null;
@@ -100,6 +110,7 @@ LovefieldService.prototype.insertTests = function(testLogsRaw, currentTests) {
   var testRows = [];
   var tests = this.tests;
   var currentTestMap = {};
+  var duplicates = [];
   // We create an associative array whose keys are tests that have been added
   // in previous insert queries.
   currentTests.forEach(function(currentTest) {
@@ -111,11 +122,11 @@ LovefieldService.prototype.insertTests = function(testLogsRaw, currentTests) {
   testLogsRaw.forEach(function(testLog) {
     // First set of checks to ensure log has "action" set to "test_start"
     // and does not exist in table. (We don't want to add duplicates!)
-    if (testLog.action == "test_start" && !(testLog.test in currentTestMap)) {
+    if (testLog.action === "test_start" && !(testLog.test in currentTestMap)) {
       // Checks whether this test is already present in the insert query array.
       if (testsBeingAdded.hasOwnProperty(testLog.test)) {
         // Notify UI as this is an anomaly.
-        updateWarnings(testLog.test);
+        duplicates.push({test: testLog.test, subtest: null});
       } else {
         // Add it to the set of keys
         testsBeingAdded[testLog.test] = 1;
@@ -130,7 +141,7 @@ LovefieldService.prototype.insertTests = function(testLogsRaw, currentTests) {
       insert().
       into(tests).
       values(testRows);
-  return q1.exec();
+  return q1.exec().then((rows) => [rows, duplicates]);
 }
 
 LovefieldService.prototype.insertTestResults = function(testLogsRaw, tests, testRuns) {
@@ -146,7 +157,7 @@ LovefieldService.prototype.insertTestResults = function(testLogsRaw, tests, test
   // in same select query.
   var testResultsBeingAdded = {};
   testLogsRaw.forEach(function(testLog) {
-    if (testLog.action == "test_end") {
+    if (testLog.action === "test_end") {
       // Duplicate found in same insert query array.
       if (!testResultsBeingAdded.hasOwnProperty(testLog.test)) {
         // Add it to set of keys
@@ -177,6 +188,7 @@ LovefieldService.prototype.insertSubtests = function(testLogsRaw, tests, current
   });
   var subtestRows = [];
   var tests = this.tests;
+  var duplicates = [];
   // Creating a 2-D hash map to store existing subtests in the table inserted
   // via previous insert queries. The first dimension corresponds to test,
   // and the second dimension corresponds to subtest.
@@ -192,11 +204,10 @@ LovefieldService.prototype.insertSubtests = function(testLogsRaw, tests, current
   var subtestsBeingAdded = {};
   testLogsRaw.forEach(function(testLog) {
     // Checking whether subtest hasn't been inserted previously to our test table.
-    if (testLog.action == "test_status" && !(currentSubtestMap.hasOwnProperty(testLog.test) && currentSubtestMap[testLog.test].hasOwnProperty(testLog.subtest))) {
+    if (testLog.action === "test_status" && !(currentSubtestMap.hasOwnProperty(testLog.test) && currentSubtestMap[testLog.test].hasOwnProperty(testLog.subtest))) {
       // Checking whether this subtest has been added previously in the same insert query.
       if (subtestsBeingAdded.hasOwnProperty(testLog.test) && subtestsBeingAdded[testLog.test].hasOwnProperty(testLog.subtest)) {
-        // Notify UI
-        updateWarnings(testLog.test, testLog.subtest);
+        duplicates.push({test: testLog.test, subtest: testLog.subtest});
       } else {
         // Adding test-subtest pair to hash map subtestsBeingAdded
         if (!subtestsBeingAdded.hasOwnProperty(testLog.test)) {
@@ -216,7 +227,7 @@ LovefieldService.prototype.insertSubtests = function(testLogsRaw, tests, current
       insert().
       into(tests).
       values(subtestRows);
-  return q1.exec();
+  return q1.exec().then((rows) => [rows, duplicates]);
 }
 
 LovefieldService.prototype.insertSubtestResults = function(testLogsRaw, subtests, testRuns) {
@@ -231,7 +242,7 @@ LovefieldService.prototype.insertSubtestResults = function(testLogsRaw, subtests
   var test_results = this.test_results;
   var subtestResultsBeingAdded = {};
   testLogsRaw.forEach(function(testLog) {
-    if (testLog.action == "test_status") {
+    if (testLog.action === "test_status") {
       if (!(subtestResultsBeingAdded.hasOwnProperty(testLog.test) && subtestResultsBeingAdded[testLog.test].hasOwnProperty(testLog.subtest))) {
         if (!subtestResultsBeingAdded.hasOwnProperty(testLog.test)) {
           subtestResultsBeingAdded[testLog.test] = {};
@@ -274,8 +285,7 @@ LovefieldService.prototype.selectAllSubtests = function() {
     exec();
 }
 
-LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters,
-                                                            minTestId, maxTestId, limit) {
+LovefieldService.prototype.selectFilteredResults = function(filter, minTestId, maxTestId, limit) {
   var lovefield = this;
   var tests = this.tests;
   var test_results = this.test_results;
@@ -284,33 +294,53 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
   var query = lovefield.db_.
     select(tests.id.as("test_id")).
     from(tests);
-  var runs = [];
 
-  // JOINs with results table
-  var results = filters.map((filter, i) => {
-    var alias = this.test_results.as('results' + i);
-    query = query.leftOuterJoin(alias, tests.id.eq(alias.test_id));
-    return alias;
+  var whereConditions = [];
+
+  var joinRuns = {};
+  filter.statusFilter.forEach((x) => {
+    joinRuns[x.run] = 1;
+    x.isRun = [];
+    x.targets = [];
+    x.status.forEach((status) => {
+      if (status.startsWith("result_")) {
+        x.isRun.push(true);
+        var target = status.slice("result_".length);
+        joinRuns[target] = 1;
+        x.targets.push(target);
+      } else {
+        x.isRun.push(false);
+        var target = status;
+        x.targets.push(target);
+      }
+    });
   });
-
-  // JOINs with runs table
-  var runs = filters.map((filter, i) => {
-    var alias = this.test_runs.as('runs' + i);
-    query = query.innerJoin(alias, results[i].run_id.eq(alias.run_id));
-    return alias;
+  // JOINs with results and runs table
+  var aliases = {};
+  Object.keys(joinRuns).forEach((run) => {
+    var resultAlias = this.test_results.as('results ' + run);
+    query = query.leftOuterJoin(resultAlias, tests.id.eq(resultAlias.test_id));
+    var runAlias = this.test_runs.as('run ' + run);
+    query = query.innerJoin(runAlias, resultAlias.run_id.eq(runAlias.run_id));
+    aliases[run] = {
+      "runAlias": runAlias,
+      "resultAlias": resultAlias
+    };
+    whereConditions.push(runAlias.name.eq(run));
   });
 
   // WHERE clause
-  var whereConditions = [];
-  filters.forEach((constraint, i) => {
-    whereConditions.push(runs[i].name.eq(constraint.run));
-    var status_op;
-    if (constraint.equality == "is") {
-      status_op = results[i].status.eq(constraint.status);
-    } else if (constraint.equality == "is not") {
-      status_op = results[i].status.neq(constraint.status);
-    }
-    whereConditions.push(status_op);
+  filter.statusFilter.forEach((constraint, i) => {
+    var runConditions = [];
+    var op = constraint.equality === "is" ? "eq" : "neq";
+    var booleanOp = constraint.equality === "is" ? "or" : "and";
+    constraint.targets.forEach((x, j) => {
+      var target = constraint.isRun[j] ? aliases[x].resultAlias.status : x;
+      runConditions.push(aliases[constraint.run].resultAlias.status[op](target));
+    });
+    var condition = lf.op[booleanOp].apply(lf.op[booleanOp], runConditions);
+    console.log(runConditions);
+    whereConditions.push(condition);
   });
 
   // working on path filter
@@ -318,20 +348,20 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
     include: [],
     exclude: []
   }
-  pathFilters.forEach((pathFilter) => {
+  filter.pathFilter.forEach((pathFilter) => {
     pathFilter.path = pathFilter.path.replace("\\", "/");
     var path_regex = escapeRegExp(pathFilter.path);
     var choice = pathFilter.choice.split(":");
-    if (choice[1] == "start") {
+    if (choice[1] === "start") {
       if (pathFilter.path.charAt(0) != "/") {
         path_regex = escapeRegExp("/" + pathFilter.path);
       }
       path_regex = "^" + path_regex;
-    } else if (choice[1] == "end") {
+    } else if (choice[1] === "end") {
       path_regex = path_regex + "$";
     }
     path_regex = new RegExp(path_regex, 'i');
-    if (choice[0] == "include") {
+    if (choice[0] === "include") {
       pathOrConditions.include.push(tests.test.match(path_regex));
     } else {
       pathOrConditions.exclude.push(tests.test.match(path_regex));
@@ -346,12 +376,21 @@ LovefieldService.prototype.selectFilteredResults = function(filters, pathFilters
     whereConditions.push(lf.op.not(lf.op.or.apply(lf.op.or, pathOrConditions.exclude)));
   }
 
+  // Working test type filter
+  if (filter.testTypeFilter.type === "parent") {
+      whereConditions.push(tests.parent_id.eq(null));
+  } else if (filter.testTypeFilter.type === "child") {
+      whereConditions.push(tests.parent_id.neq(null));
+  }
+
   orderByDir = lf.Order.ASC;
   if (minTestId) {
-      whereConditions.push(tests.id.gt(minTestId))
+    whereConditions.push(tests.id.gt(minTestId));
   } else if (maxTestId) {
-      whereConditions.push(tests.id.lt(maxTestId))
-      orderByDir = lf.Order.DESC;
+    whereConditions.push(tests.id.lt(maxTestId));
+    // The final results are always in ascending order because they come from a second query
+    // with its own order
+    orderByDir = lf.Order.DESC;
   }
 
   if (whereConditions.length) {
@@ -445,11 +484,14 @@ LovefieldService.prototype.deleteEntries = function(run_id) {
 
 LovefieldService.prototype.selectParticularRun = function(runName) {
   var test_runs = this.test_runs;
-  return this.db_.
-    select().
-    from(test_runs).
-    where(test_runs.name.eq(runName)).
-    exec();
+  return this.getDbConnection()
+    .then(db => {
+      return db
+        .select()
+        .from(test_runs)
+        .where(test_runs.name.eq(runName))
+        .exec();
+    });
 }
 
 LovefieldService.prototype.getRuns = function() {
