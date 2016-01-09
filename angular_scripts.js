@@ -1,4 +1,4 @@
-var app = angular.module('wptview', []);
+var app = angular.module('wptview', ['angularSpinner']);
 
 app.directive('customOnChange', function() {
   return {
