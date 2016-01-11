@@ -9,6 +9,11 @@ LogReader.prototype.read = function(file) {
     .then((logData) => {return logCruncher(logData, testsFilter)});
 }
 
+LogReader.prototype.readURL = function(url) {
+  return readURL(url)
+    .then((logData) => {return logCruncher(logData, testsFilter)});
+}
+
 function logCruncher(rawtext, filter) {
   return new Promise(function (resolve, reject) {
     var JSONArray = [];
@@ -36,5 +41,22 @@ function readFile(file) {
   return new Promise(function(resolve, reject) {
     var reader = new FileReaderSync();
     resolve(reader.readAsText(file, "UTF-8"));
+  });
+}
+
+function readURL(url) {
+  return new Promise(function(resolve, reject) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      if (xhttp.readyState == 4) {
+        if (xhttp.status == 200) {
+          resolve(xhttp.responseText);
+        } else {
+          reject("HTTP request failed!");
+        }
+      }
+    };
+    xhttp.open('GET', url, false);
+    xhttp.send();
   });
 }
