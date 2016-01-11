@@ -56,13 +56,13 @@ app.factory('ResultsModel',function() {
     this.logReader = new WorkerService("logcruncher.js");
   }
 
-  ResultsModel.prototype.addResultsFromLogs = function (file, runName) {
+  ResultsModel.prototype.addResultsFromLogs = function (source, runName, fetchFunc) {
     var lovefield = this.service;
     var resultData = null;
     var testData = null;
     var testRunData = null;
     var duplicates = null;
-    return this.logReader.run("read", [file])
+    return this.logReader.run(fetchFunc, [source])
       .then((data) => {resultData = data})
       // Filling the test_runs table
       .then(() => {return lovefield.run("selectParticularRun", [runName])})
@@ -177,15 +177,35 @@ app.controller('wptviewController', function($scope, ResultsModel) {
       return input;
   };
 
+  $scope.fetchLog = function () {
+     if($scope.fileEvent){
+         $scope.uploadFile();
+     } else if($scope.upload.logUrl != '') {
+         $scope.fetchFromUrl();
+     }
+  }
+
   $scope.uploadFile = function () {
     $scope.busy = true;
     var evt = $scope.fileEvent;
     var file = evt.target.files[0];
-    resultsModel.addResultsFromLogs(file, $scope.upload.runName)
+    resultsModel.addResultsFromLogs(file, $scope.upload.runName, "read")
     .then((duplicates) => updateWarnings(duplicates))
     .then(updateRuns)
     .then(() => {
       $scope.isFileEmpty = true;
+      $scope.upload.runName = "";
+      $scope.busy = false;
+      $scope.$apply();
+    });
+  }
+
+  $scope.fetchFromUrl = function () {
+    $scope.busy = true;
+    resultsModel.addResultsFromLogs($scope.upload.logUrl, $scope.upload.runName, "readURL")
+    .then((duplicates) => updateWarnings(duplicates))
+    .then(updateRuns)
+    .then(() => {
       $scope.upload.runName = "";
       $scope.busy = false;
       $scope.$apply();

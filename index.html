@@ -44,8 +44,11 @@
         <div class="import" ng-hide="!showImport">
           <form name="fileInput" novalidate>
             <input name="logfile" type="file" id="log_file" custom-on-change="newFile" ng-disabled="busy" value="Select File">
-            <input name="run" type="text" ng-model="upload.runName" required ng-disabled="busy || isFileEmpty" placeholder="Run name">
-            <button ng-click="uploadFile()" ng-disabled="busy || isFileEmpty || fileInput.$invalid" for="fileInput">Import Log</button>
+            OR
+            <input name="log_url" type="url" id="log_url" ng-disabled="busy" ng-model="upload.logUrl" placeholder="URL"/>
+            <br>
+            <input name="run" type="text" ng-model="upload.runName" required ng-disabled="busy" placeholder="Run name">
+            <button ng-click="fetchLog()" ng-disabled="busy || !fileInput.log_url.$valid || isFileEmpty || fileInput.$invalid" for="fileInput">Import Log</button>
           </form>
         </div>
       </div>
