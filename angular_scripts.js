@@ -242,9 +242,9 @@ app.controller('wptviewController', function($scope, ResultsModel) {
 
   $scope.addConstraint = function() {
     $scope.filter.statusFilter.push({
-      run : "",
+      run : $scope.runs[0].name,
       equality : "is",
-      status : [""]
+      status : ["PASS"]
     });
   }
 
