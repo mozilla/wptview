@@ -258,7 +258,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   }
 
   $scope.addOrConstraint = function(index) {
-    $scope.filter.statusFilter[index].status.push("");
+    $scope.filter.statusFilter[index].status.push("PASS");
   }
 
   $scope.deleteOrConstraint = function(index) {
