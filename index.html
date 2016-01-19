@@ -88,6 +88,7 @@
         <form ng-repeat="i in range(1, filter.statusFilter.length+1)">
           <select ng-disabled="busy" ng-model="filter.statusFilter[$index].run">
             <option ng-repeat="run in runs" value="{{ run.name }}">{{ run.name }}</option>
+            <option ng-if="runs.length > 1" value="ALL">ALL</option>
           </select>
           <select ng-disabled="busy" ng-model="filter.statusFilter[$index].equality">
             <option value="is">is</option>
