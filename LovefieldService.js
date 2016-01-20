@@ -285,7 +285,7 @@ LovefieldService.prototype.selectAllSubtests = function() {
     exec();
 }
 
-LovefieldService.prototype.selectFilteredResults = function(filter, minTestId, maxTestId, limit) {
+LovefieldService.prototype.selectFilteredResults = function(filter, minTestId, maxTestId, limit, runs) {
   var lovefield = this;
   var tests = this.tests;
   var test_results = this.test_results;
@@ -299,7 +299,13 @@ LovefieldService.prototype.selectFilteredResults = function(filter, minTestId, m
 
   var joinRuns = {};
   filter.statusFilter.forEach((x) => {
-    joinRuns[x.run] = 1;
+    if (x.run == "ALL") {
+      runs.forEach((run) => {
+        joinRuns[run.name] = 1;
+      });
+    } else {
+      joinRuns[x.run] = 1;
+    }
     x.isRun = [];
     x.targets = [];
     x.status.forEach((status) => {
@@ -334,13 +340,20 @@ LovefieldService.prototype.selectFilteredResults = function(filter, minTestId, m
     var runConditions = [];
     var op = constraint.equality === "is" ? "eq" : "neq";
     var booleanOp = constraint.equality === "is" ? "or" : "and";
-    constraint.targets.forEach((x, j) => {
-      var target = constraint.isRun[j] ? aliases[x].resultAlias.status : x;
-      runConditions.push(aliases[constraint.run].resultAlias.status[op](target));
-    });
-    var condition = lf.op[booleanOp].apply(lf.op[booleanOp], runConditions);
-    console.log(runConditions);
-    whereConditions.push(condition);
+    if (constraint.run == "ALL") {
+      runs.forEach((run) => {
+        runConditions = constraint.targets.map((x) => aliases[run.name].resultAlias.status[op](x));
+        var condition = lf.op[booleanOp].apply(lf.op[booleanOp], runConditions);
+        whereConditions.push(condition);
+      });
+    } else {
+      constraint.targets.forEach((x, j) => {
+        var target = constraint.isRun[j] ? aliases[x].resultAlias.status : x;
+        runConditions.push(aliases[constraint.run].resultAlias.status[op](target));
+      });
+      var condition = lf.op[booleanOp].apply(lf.op[booleanOp], runConditions);
+      whereConditions.push(condition);
+    }
   });
 
   // working on path filter

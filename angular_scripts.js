@@ -14,7 +14,7 @@ app.filter('arrFilter', function() {
   return function(collection, currentRun) {
     var output = [];
     collection.forEach((item) => {
-        if (currentRun != item.name) {
+        if (currentRun != item.name && currentRun != "ALL") {
             output.push(item);
         }
     });
@@ -104,9 +104,9 @@ app.factory('ResultsModel',function() {
                                      there is no upper limit.
     @param {(number)} limit - Number of tests to load.
    */
-  ResultsModel.prototype.getResults = function(filter, minTestId, maxTestId, limit) {
+  ResultsModel.prototype.getResults = function(filter, minTestId, maxTestId, limit, runs) {
     return this.service.run("selectFilteredResults",
-                            [filter, minTestId, maxTestId, limit]);
+                            [filter, minTestId, maxTestId, limit, runs]);
   }
 
   ResultsModel.prototype.removeResults = function(run_id) {
@@ -218,7 +218,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
       var maxTestId = $scope.resultsView.minTestId;
     }
 
-    resultsModel.getResults($scope.filter, minTestId, maxTestId, $scope.resultsView.limit)
+    resultsModel.getResults($scope.filter, minTestId, maxTestId, $scope.resultsView.limit, $scope.runs)
       .then((results) => {
         if (results.length) {
           if (!page) {
