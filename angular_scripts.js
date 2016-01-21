@@ -104,9 +104,9 @@ app.factory('ResultsModel',function() {
                                      there is no upper limit.
     @param {(number)} limit - Number of tests to load.
    */
-  ResultsModel.prototype.getResults = function(filter, minTestId, maxTestId, limit, runs) {
+  ResultsModel.prototype.getResults = function(filter, runs, minTestId, maxTestId, limit) {
     return this.service.run("selectFilteredResults",
-                            [filter, minTestId, maxTestId, limit, runs]);
+                            [filter, runs, minTestId, maxTestId, limit]);
   }
 
   ResultsModel.prototype.removeResults = function(run_id) {
@@ -206,6 +206,41 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     });
   }
 
+  $scope.export = function() {
+    $scope.busy = true;
+    resultsModel.getResults($scope.filter, $scope.runs)
+    .then((results) => {
+      var finaljson = {};
+      finaljson.runs = $scope.runs.map((run) => run.name);
+      finaljson.results = {};
+      var organizedResults = organizeResults(results);
+      organizedResults.forEach((result) => {
+        if (!finaljson.results.hasOwnProperty(result.test)) {
+          finaljson.results[result.test] = [];
+        }
+        var run_results = result.runs.map((run) => [run.expected, run.status, run.message]);
+        finaljson.results[result.test].push([result.subtest].concat(run_results));
+      });
+      saveData(finaljson, "result.json");
+      $scope.busy = false;
+      $scope.$apply();
+    });
+  }
+
+  // http://jsfiddle.net/koldev/cw7w5/
+  function saveData(data, fileName) {
+    var a = document.createElement("a");
+    document.body.appendChild(a);
+    a.style = "display: none";
+    var json = JSON.stringify(data),
+        blob = new Blob([json], {type: "octet/stream"}),
+        url = window.URL.createObjectURL(blob);
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+
   $scope.fillTable = function(page) {
     var minTestId = null;
     var maxTestId = null;
@@ -218,7 +253,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
       var maxTestId = $scope.resultsView.minTestId;
     }
 
-    resultsModel.getResults($scope.filter, minTestId, maxTestId, $scope.resultsView.limit, $scope.runs)
+    resultsModel.getResults($scope.filter, $scope.runs, minTestId, maxTestId, $scope.resultsView.limit)
       .then((results) => {
         if (results.length) {
           if (!page) {
