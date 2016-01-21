@@ -285,7 +285,7 @@ LovefieldService.prototype.selectAllSubtests = function() {
     exec();
 }
 
-LovefieldService.prototype.selectFilteredResults = function(filter, minTestId, maxTestId, limit, runs) {
+LovefieldService.prototype.selectFilteredResults = function(filter, runs, minTestId, maxTestId, limit) {
   var lovefield = this;
   var tests = this.tests;
   var test_results = this.test_results;
@@ -396,14 +396,16 @@ LovefieldService.prototype.selectFilteredResults = function(filter, minTestId, m
       whereConditions.push(tests.parent_id.neq(null));
   }
 
-  orderByDir = lf.Order.ASC;
-  if (minTestId) {
-    whereConditions.push(tests.id.gt(minTestId));
-  } else if (maxTestId) {
-    whereConditions.push(tests.id.lt(maxTestId));
-    // The final results are always in ascending order because they come from a second query
-    // with its own order
-    orderByDir = lf.Order.DESC;
+  if (limit) {
+    orderByDir = lf.Order.ASC;
+    if (minTestId) {
+      whereConditions.push(tests.id.gt(minTestId));
+    } else if (maxTestId) {
+      whereConditions.push(tests.id.lt(maxTestId));
+      // The final results are always in ascending order because they come from a second query
+      // with its own order
+      orderByDir = lf.Order.DESC;
+    }
   }
 
   if (whereConditions.length) {
@@ -411,8 +413,10 @@ LovefieldService.prototype.selectFilteredResults = function(filter, minTestId, m
     query = query.where(whereClause);
   }
 
-  query = query.orderBy(tests.id, orderByDir);
-  query = query.limit(limit);
+  if (limit) {
+    query = query.orderBy(tests.id, orderByDir);
+    query = query.limit(limit);
+  }
 
   return query.exec()
   .then((test_ids) => {

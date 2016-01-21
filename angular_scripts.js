@@ -104,9 +104,9 @@ app.factory('ResultsModel',function() {
                                      there is no upper limit.
     @param {(number)} limit - Number of tests to load.
    */
-  ResultsModel.prototype.getResults = function(filter, minTestId, maxTestId, limit, runs) {
+  ResultsModel.prototype.getResults = function(filter, runs, minTestId, maxTestId, limit) {
     return this.service.run("selectFilteredResults",
-                            [filter, minTestId, maxTestId, limit, runs]);
+                            [filter, runs, minTestId, maxTestId, limit]);
   }
 
   ResultsModel.prototype.removeResults = function(run_id) {
@@ -120,7 +120,7 @@ app.factory('ResultsModel',function() {
   return ResultsModel;
 });
 
-app.controller('wptviewController', function($scope, ResultsModel) {
+app.controller('wptviewController', function($scope, ResultsModel, $window) {
   $scope.results = null;
   $scope.warnings = [];
   $scope.showImport = false;
@@ -206,6 +206,17 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     });
   }
 
+  $scope.export = function() {
+    $scope.busy = true;
+    resultsModel.getResults($scope.filter, $scope.runs)
+    .then((results) => {
+      var jsonstring = angular.toJson(organizeResults(results), "pretty");
+      $window.open("data:text/json;charset=utf8," + encodeURIComponent(jsonstring));
+      $scope.busy = false;
+      $scope.$apply();
+    });
+  }
+
   $scope.fillTable = function(page) {
     var minTestId = null;
     var maxTestId = null;
@@ -218,7 +229,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
       var maxTestId = $scope.resultsView.minTestId;
     }
 
-    resultsModel.getResults($scope.filter, minTestId, maxTestId, $scope.resultsView.limit, $scope.runs)
+    resultsModel.getResults($scope.filter, $scope.runs, minTestId, maxTestId, $scope.resultsView.limit)
       .then((results) => {
         if (results.length) {
           if (!page) {
