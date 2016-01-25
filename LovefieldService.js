@@ -285,7 +285,7 @@ LovefieldService.prototype.selectAllSubtests = function() {
     exec();
 }
 
-LovefieldService.prototype.selectFilteredResults = function(filter, minTestId, maxTestId, limit, runs) {
+LovefieldService.prototype.selectFilteredResults = function(filter, runs, minTestId, maxTestId, limit) {
   var lovefield = this;
   var tests = this.tests;
   var test_results = this.test_results;
@@ -379,7 +379,6 @@ LovefieldService.prototype.selectFilteredResults = function(filter, minTestId, m
     } else {
       pathOrConditions.exclude.push(tests.test.match(path_regex));
     }
-    console.log(path_regex.toString());
   });
 
   if (pathOrConditions.include.length) {
@@ -397,27 +396,29 @@ LovefieldService.prototype.selectFilteredResults = function(filter, minTestId, m
   }
 
   orderByDir = lf.Order.ASC;
-  if (minTestId) {
-    whereConditions.push(tests.id.gt(minTestId));
-  } else if (maxTestId) {
-    whereConditions.push(tests.id.lt(maxTestId));
-    // The final results are always in ascending order because they come from a second query
-    // with its own order
-    orderByDir = lf.Order.DESC;
+  if (limit) {
+    if (minTestId) {
+      whereConditions.push(tests.id.gt(minTestId));
+    } else if (maxTestId) {
+      whereConditions.push(tests.id.lt(maxTestId));
+      // The final results are always in ascending order because they come from a second query
+      // with its own order
+      orderByDir = lf.Order.DESC;
+    }
   }
 
   if (whereConditions.length) {
     var whereClause = lf.op.and.apply(lf.op.and, whereConditions);
     query = query.where(whereClause);
   }
-
   query = query.orderBy(tests.id, orderByDir);
-  query = query.limit(limit);
+  if (limit) {
+    query = query.limit(limit);
+  }
 
   return query.exec()
   .then((test_ids) => {
     var test_list = test_ids.map((test) => test.test_id);
-    console.log(test_list);
 
     // We need an additional query to select test results for ALL runs
     // for the tests filtered by q1. We need this unusual approach as
