@@ -17,11 +17,13 @@
       <div>
         <table id="runsTable">
           <tr>
+            <th> </th>
             <th>Run Name</th>
             <th>Results Loaded</th>
             <th></th>
           </tr>
           <tr ng-repeat="run in runs">
+            <td><img ng-click="editName($index, run.run_id)" ng-disabled="editSelected" src="edit_icon.png"></td>
             <td>{{ run.name }}</td>
             <td>{{ run.count }}</td>
             <td><button ng-click="clearTable(run.run_id)" ng-disabled="busy">Clear</button></td>
