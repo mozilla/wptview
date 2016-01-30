@@ -136,7 +136,7 @@
           <td>{{ result.test }}</td>
           <td>{{ result.subtest }}</td>
           <td ng-repeat-start="run in result.runs" class="expected {{run.expected}}">{{ run.expected }}</td>
-          <td ng-repeat-end class="result {{run.status}}" ng-click="showError(run.message);$event.stopPropagation();" id="status">{{ run.status }}</td>
+          <td ng-repeat-end class="result {{run.status}}" ng-click="showError(run.message); $event.stopPropagation();" id="status">{{ run.status }}</td>
         </tr>
       </table>
       <button ng-if="results !== null" ng-click="fillTable('prev')" ng-disabled="busy || runs === null || runs.length === 0 || resultsView.firstPage">Previous</button>
