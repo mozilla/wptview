@@ -133,6 +133,15 @@ LovefieldService.prototype.switchRuns = function(run_ids, enabled) {
 };
 
 
+LovefieldService.prototype.editRunName = function(run_id, newRunName) {
+  var test_runs = this.test_runs;
+  var q1 = this.db_.
+      update(test_runs).
+      set(test_runs.name, newRunName).
+      where(lf.op.and(test_runs.run_id.eq(run_id)));
+  return q1.exec();
+}
+
 LovefieldService.prototype.insertTests = function(testLogsRaw, currentTests) {
   var testRows = [];
   var tests = this.tests;
