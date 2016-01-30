@@ -18,6 +18,17 @@ h1 {
     background-color: #e7ebf1;
 }
 
+.error {
+    position: fixed;
+    bottom: 0;
+    height: 40px;
+    width: 100%;
+    color: white;
+    background-color: #FF0000;
+    opacity: 0.9;
+    text-align: center;
+}
+
 #wptview {
     padding-left: 16px;
     padding-right: 16px;
