@@ -35,7 +35,6 @@ function WorkerService(workerScript) {
     }
     resolve = this.resolvers[msg_id];
     delete this.resolvers[msg_id];
-    console.log(data);
     resolve(data);
   }.bind(this);
 }
@@ -45,7 +44,6 @@ WorkerService.prototype.run = function(command, data) {
   var msg = [this.msg_id++, command, data];
   this.worker.postMessage(msg);
   return new Promise((resolve) => {
-    console.log("Adding resolver " + msg[0]);
     this.resolvers[msg[0]] = resolve;
   });
 }
@@ -216,7 +214,6 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     $scope.busy = true;
     resultsModel.removeResults(run_id)
       .then(() => {
-        console.log("Table successfully cleared!");
         $scope.results = null;
         $scope.warnings = []})
     .then(updateRuns)

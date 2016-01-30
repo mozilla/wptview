@@ -168,7 +168,7 @@ LovefieldService.prototype.insertTestResults = function(testLogsRaw, tests, test
           'message': testLog.message,
           'test_id': resultId,
           'run_id': testRunId,
-          'expected': testLog.hasOwnProperty("expected") ? testLog.expected : "PASS"
+          'expected': testLog.hasOwnProperty("expected") ? testLog.expected : testLog.status
         });
         testResultsRows.push(row);
       }
@@ -254,7 +254,7 @@ LovefieldService.prototype.insertSubtestResults = function(testLogsRaw, subtests
           'message': testLog.message,
           'test_id': resultId,
           'run_id': testRunId,
-          'expected': testLog.hasOwnProperty("expected") ? testLog.expected : "PASS"
+          'expected': testLog.hasOwnProperty("expected") ? testLog.expected : testLog.status
         });
         subtestResultsRows.push(row);
       }
