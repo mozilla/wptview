@@ -6,8 +6,9 @@
     background-color: #f8f8f8;
 }
 
-body {
-    margin: 0;
+.page {
+    display: inline-block;
+    width: 100%;
 }
 
 h1 {
@@ -16,6 +17,20 @@ h1 {
     width: 100%;
     padding: 0.5em;
     background-color: #e7ebf1;
+}
+
+#message {
+    font-family: "Fira Sans Mono", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", "Monospace";
+}
+.detailsPanel {
+    position: fixed;
+    bottom: 0px;
+    left: 0px;
+    height: 15vh;
+    width: 100%;
+    background-color: #FFFFFF;
+    border-top: solid black;
+    padding: 1%;
 }
 
 #wptview {
@@ -69,6 +84,10 @@ tbody > tr > td {
 
 .expected, .result {
     width: 5em;
+}
+
+.result {
+    cursor: pointer;
 }
 
 .PASS, .OK {
