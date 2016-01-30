@@ -200,6 +200,8 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     });
   }
 
+  
+
   $scope.runNameTest = function () {
 
     var oTable = document.getElementById('runsTable');
@@ -220,7 +222,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
               //alert(cellVal);
        if (cellVal === $scope.upload.runName) {
         $scope.match = 1;
-        alert("Try Another Run Name.");
+        //alert("Try Another Run Name.");
         break;
       }
            
