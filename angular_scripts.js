@@ -200,6 +200,34 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     });
   }
 
+  $scope.runNameTest = function () {
+
+    $scope.oTable = document.getElementById('runsTable');
+    $scope.match = 0;
+
+    var run_name_ent = document.getElementById("myText").value;
+    if (run_name_ent=== null) $scope.match=1;
+    var rowLength = oTable.rows.length;
+     //loops through rows    
+    for (i = 0; i < rowLength; i++){
+
+      //gets cells of current row  
+       var oCells = oTable.rows.item(i).cells;
+
+      /* //gets amount of cells of current row
+       var cellLength = oCells.length; */
+       var cellVal = oCells.item(0).innerHTML;
+              //alert(cellVal);
+       if (cellVal === run_name_ent) {
+        $scope.match = 1;
+        alert("Try Another Run Name.");
+        break;
+      }
+           
+    }
+  }
+
+
   $scope.fetchFromUrl = function () {
     $scope.busy = true;
     resultsModel.addResultsFromLogs($scope.upload.logUrl, $scope.upload.runName, "readURL")
