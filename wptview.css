@@ -18,7 +18,7 @@ h1 {
     background-color: #e7ebf1;
 }
 
-.error {
+.errorPanel {
     position: fixed;
     bottom: 0;
     height: 40px;
@@ -110,4 +110,8 @@ tbody > tr > td {
 .CRASH {
     background-color: black;
     color: white;
+}
+
+#status {
+    cursor: pointer;
 }

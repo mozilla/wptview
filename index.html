@@ -6,7 +6,7 @@
 <div id="wptview" ng-app="wptview" ng-controller="wptviewController" ng-cloak>
   <span us-spinner="{radius: 20, length: 15}" spinner-on="busy"/>
 
-  <div ng-click="errorMessage.visible=false">
+  <div ng-click="errorMessage.visible = false">
     <section>
       <h2>Log Files</h2>
       <p ng-if="runs === null">
@@ -136,7 +136,7 @@
           <td>{{ result.test }}</td>
           <td>{{ result.subtest }}</td>
           <td ng-repeat-start="run in result.runs" class="expected {{run.expected}}">{{ run.expected }}</td>
-          <td ng-repeat-end class="result {{run.status}}" ng-click="showError(run.message);$event.stopPropagation();">{{ run.status }}</td>
+          <td ng-repeat-end class="result {{run.status}}" ng-click="showError(run.message);$event.stopPropagation();" id="status">{{ run.status }}</td>
         </tr>
       </table>
       <button ng-if="results !== null" ng-click="fillTable('prev')" ng-disabled="busy || runs === null || runs.length === 0 || resultsView.firstPage">Previous</button>
@@ -145,7 +145,7 @@
     <p>
       {{ warning_message() }}
     </p>
-    <div ng-show="errorMessage.visible" class="error">
+    <div ng-show="errorMessage.visible" class="errorPanel">
       {{ errorMessage.error }}
     </div>
   </div>
