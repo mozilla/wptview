@@ -178,6 +178,8 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   };
 
   $scope.fetchLog = function () {
+
+
      if ($scope.upload.logSrc == 'file') {
          $scope.uploadFile();
      } else if ($scope.upload.logSrc == 'url') {
@@ -204,10 +206,23 @@ app.controller('wptviewController', function($scope, ResultsModel) {
 
   $scope.runNameTest = function () {
 
-    var oTable = document.getElementById('runsTable');
     $scope.match = false;
+    var oTable = document.getElementById('runsTable');
+    $scope.runs.forEach((run) => {
+      if ($scope.upload.runName===run.name){
+        $scope.match=1;
+        document.getElementById("runT").style.borderColor = "red";
+        document.getElementById("errorT").value = "Run Names must be unique! Please try another run name!";
+      }
+      else {
+        document.getElementById("runT").style.borderColor = "white";
+        document.getElementById("errorT").value = ""
+    }
+    })
+    
 
-   var x = $scope.upload.runName;
+  
+   /*
     if (x=== "abcd") $scope.match= true;
     var rowLength = oTable.rows.length;
      //loops through rows    
@@ -222,11 +237,13 @@ app.controller('wptviewController', function($scope, ResultsModel) {
               //alert(cellVal);
        if (cellVal === $scope.upload.runName) {
         $scope.match = 1;
+
         //alert("Try Another Run Name.");
         break;
       }
            
     }
+*/
 
   }
 

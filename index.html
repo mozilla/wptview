@@ -48,8 +48,9 @@
             <input type="radio" ng-model="upload.logSrc" value="url">Fetch from URL</input><br>
               <input name="log_url" type="url" id="log_url" ng-model="upload.logUrl" placeholder="URL" ng-disabled="busy || upload.logSrc != 'url'"/>
               <br><br>
-            <input name="run" onblur="runNameTest()" ng-keyup="runNameTest()" type="text" ng-model="upload.runName" required ng-disabled="busy" placeholder="Run name">
+            <input id = "runT" name="run" onblur="runNameTest()" ng-keyup="runNameTest()" type="text" ng-model="upload.runName" required ng-disabled="busy" placeholder="Run name">
             <button ng-click="fetchLog()" ng-disabled="busy || (upload.logSrc == 'file' && isFileEmpty) || match ||(upload.logSrc == 'url' && !upload.logUrl) || !upload.runName " for="fileInput">Import Log</button>
+            <input id="errorT" disabled />
           </form>
         </div>
       </div>
