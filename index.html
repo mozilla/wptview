@@ -2,17 +2,16 @@
 <meta charset=utf-8>
 <title>Web Platform Tests Results</title>
 <link rel=stylesheet href="wptview.css">
-
-<h1>Web Platform Tests Viewer</h1>
 <div id="wptview" ng-app="wptview" ng-controller="wptviewController" ng-cloak>
   <span us-spinner="{radius: 20, length: 15}" spinner-on="busy"/>
 
+  <div ng-click="displayError.visible = false" class="bodys">
+  <h1>Web Platform Tests Viewer</h1>
   <section>
     <h2>Log Files</h2>
     <p ng-if="runs === null">
       Loading...
     </p>
-
     <div id="runsData"  ng-if="runs !== null">
       <div>
         <table id="runsTable">
@@ -138,7 +137,7 @@
         <td>{{ result.test }}</td>
         <td>{{ result.subtest }}</td>
         <td ng-repeat-start="run in result.runs | enabledFilter" class="expected {{run.expected}}">{{ run.expected }}</td>
-        <td ng-repeat-end class="result {{run.status}}">{{ run.status }}</td>
+        <td ng-repeat-end class="result {{run.status}}" ng-click="showError(run, result); $event.stopPropagation();">{{ run.status }}</td>
       </tr>
     </table>
     <button ng-if="results !== null" ng-click="fillTable('prev')" ng-disabled="busy || runs === null || runs.length === 0 || resultsView.firstPage">Previous</button>
@@ -147,6 +146,12 @@
   <p>
     {{ warning_message() }}
   </p>
+  </div>
+  <div ng-show="displayError.visible" class="detailsPanel">
+    <b>Test</b> : {{displayError.test}} <b>Subtest</b> : {{displayError.subtest}}<br><br>
+    <b>Expected</b> : {{displayError.expected}} <b>Got</b> : {{displayError.status}}<br>
+    <p id="message"><b>Message</b> : {{ displayError.error }}</p>
+  </div>
 </div>
 <script src="angular.min.js"></script>
 <script src="angular_scripts.js"></script>
