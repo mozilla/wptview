@@ -3,10 +3,12 @@
 <title>Web Platform Tests Results</title>
 <link rel=stylesheet href="wptview.css">
 <div id="wptview" ng-app="wptview" ng-controller="wptviewController" ng-cloak>
+
   <span us-spinner="{radius: 20, length: 15}" spinner-on="busy"/>
 
   <div ng-click="displayError.visible = false" class="page">
   <h1>Web Platform Tests Viewer</h1>
+    <progress max="100" value="{{ progressValue }}" ng-style="progressBarStyle"> </progress>
   <section>
     <h2>Log Files</h2>
     <p ng-if="runs === null">
