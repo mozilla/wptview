@@ -7,7 +7,7 @@
 }
 
 body {
-    margin: 0;
+    margin-bottom: 110px;
 }
 
 h1 {
@@ -18,15 +18,16 @@ h1 {
     background-color: #e7ebf1;
 }
 
-.errorPanel {
+.detailsPanel {
     position: fixed;
     bottom: 0;
-    height: 40px;
+    left: 0;
+    height: 80px;
     width: 100%;
-    color: white;
-    background-color: #FF0000;
-    opacity: 0.9;
-    text-align: center;
+    background-color: #FFFFFF;
+    border-top: #000000;
+    border-style: solid;
+    padding: 1%;
 }
 
 #wptview {
@@ -82,6 +83,10 @@ tbody > tr > td {
     width: 5em;
 }
 
+.result {
+    cursor: pointer;
+}
+
 .PASS, .OK {
     background-color: green;
     color: white;
@@ -110,8 +115,4 @@ tbody > tr > td {
 .CRASH {
     background-color: black;
     color: white;
-}
-
-#status {
-    cursor: pointer;
 }

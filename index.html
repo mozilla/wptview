@@ -6,7 +6,7 @@
 <div id="wptview" ng-app="wptview" ng-controller="wptviewController" ng-cloak>
   <span us-spinner="{radius: 20, length: 15}" spinner-on="busy"/>
 
-  <div ng-click="errorMessage.visible = false">
+  <div ng-click="displayError.visible = false">
     <section>
       <h2>Log Files</h2>
       <p ng-if="runs === null">
@@ -136,7 +136,7 @@
           <td>{{ result.test }}</td>
           <td>{{ result.subtest }}</td>
           <td ng-repeat-start="run in result.runs" class="expected {{run.expected}}">{{ run.expected }}</td>
-          <td ng-repeat-end class="result {{run.status}}" ng-click="showError(run.message); $event.stopPropagation();" id="status">{{ run.status }}</td>
+          <td ng-repeat-end class="result {{run.status}}" ng-click="showError(run, result); $event.stopPropagation();">{{ run.status }}</td>
         </tr>
       </table>
       <button ng-if="results !== null" ng-click="fillTable('prev')" ng-disabled="busy || runs === null || runs.length === 0 || resultsView.firstPage">Previous</button>
@@ -145,8 +145,10 @@
     <p>
       {{ warning_message() }}
     </p>
-    <div ng-show="errorMessage.visible" class="errorPanel">
-      {{ errorMessage.error }}
+    <div ng-show="displayError.visible" class="detailsPanel">
+      <b>Test</b> : {{displayError.test}} <b>Subtest</b> : {{displayError.subtest}}<br><br>
+      <b>Expected</b> : {{displayError.expected}} <b>Got</b> : {{displayError.status}}<br><br>
+      <b>Message</b> : {{ displayError.error }}
     </div>
   </div>
 </div>
