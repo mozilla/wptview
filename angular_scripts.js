@@ -56,54 +56,75 @@ app.factory('ResultsModel',function() {
     this.logReader = new WorkerService("logcruncher.js");
   }
 
-  ResultsModel.prototype.addResultsFromLogs = function (source, runName, fetchFunc) {
+  ResultsModel.prototype.addResultsFromLogs = function (source, runName, fetchFunc, $scope) {
     var lovefield = this.service;
     var resultData = null;
     var testData = null;
     var testRunData = null;
     var duplicates = null;
     var totalTasks = 11;
-    var bar = document.getElementById("progressBar");
-    document.getElementById("progressOutline").style.visibility="visible";
+    $scope.progressBarWidth = 0;
+    $scope.progressBarVisibility = "visible";
     return this.logReader.run(fetchFunc, [source])
-      .then((data) => { resultData = data;
-                        bar.style.width=100*1/totalTasks + "%";})
+      .then((data) => {resultData = data;
+                       $scope.$apply(function(){
+                        $scope.progressBarWidth = 100*1/totalTasks + "%";
+                       })
+                      })
       // Filling the test_runs table
-      .then(() => { bar.style.width=100*2/totalTasks + "%";
-                    return lovefield.run("selectParticularRun", [runName])})
-      .then((testRuns) => { bar.style.width=100*3/totalTasks + "%";
-                            return lovefield.run("insertTestRuns", [runName, testRuns])})
+      .then(() => {$scope.$apply(function(){
+                    $scope.progressBarWidth = 100*2/totalTasks + "%";
+                   })
+                  return lovefield.run("selectParticularRun", [runName])})
+      .then((testRuns) => {$scope.$apply(function(){
+                            $scope.progressBarWidth = 100*3/totalTasks + "%";
+                          })
+                           return lovefield.run("insertTestRuns", [runName, testRuns])})
       // Selecting current tests table, adding extra entries only
       .then((testRuns) => {testRunData = testRuns;
-                           bar.style.width=100*4/totalTasks + "%";
-                           return lovefield.run("selectAllParentTests")})
-      .then((parentTests) => {bar.style.width=100*5/totalTasks + "%";
-                              return lovefield.run("insertTests", [resultData, parentTests])})
-      .then((insertData) => {
-        bar.style.width=100*6/totalTasks + "%";
-        duplicates = insertData[1];
-        return lovefield.run("selectAllParentTests")
-      })
+                           $scope.$apply(function(){
+                            $scope.progressBarWidth = 100*4/totalTasks + "%";
+                          })
+                          return lovefield.run("selectAllParentTests")})
+      .then((parentTests) => {$scope.$apply(function(){
+                                $scope.progressBarWidth = 100*5/totalTasks + "%";
+                             })
+                             return lovefield.run("insertTests", [resultData, parentTests])})
+      .then((insertData) => {$scope.$apply(function(){
+                              $scope.progressBarWidth = 100*6/totalTasks + "%";
+                            })
+                            duplicates = insertData[1];
+                            return lovefield.run("selectAllParentTests")})
       // populating results table with parent test results
       .then((tests) => {testData = tests;
-                        bar.style.width=100*7/totalTasks + "%";
-                        return lovefield.run("insertTestResults",
-                                             [resultData, testData, testRunData])})
+                        $scope.$apply(function(){
+                          $scope.progressBarWidth = 100*7/totalTasks + "%";
+                        })
+                        return lovefield.run("insertTestResults",[resultData, testData, testRunData])})
       // add subtests to tests table
-      .then(() => { bar.style.width=100*8/totalTasks + "%";
-                    return lovefield.run("selectAllSubtests")})
-      .then((subtests) => { bar.style.width=100*9/totalTasks + "%";
-                            return lovefield.run("insertSubtests",
+      .then(() => {$scope.$apply(function(){
+                    $scope.progressBarWidth = 100*8/totalTasks + "%";
+                  })
+                  return lovefield.run("selectAllSubtests")})
+      .then((subtests) => {$scope.$apply(function(){
+                            $scope.progressBarWidth = 100*9/totalTasks + "%";
+                          })
+                          return lovefield.run("insertSubtests",
                                                 [resultData, testData, subtests])})
-      .then((subtestData) => {bar.style.width=100*10/totalTasks + "%";
-                              duplicates = duplicates.concat(subtestData[1]);
-                              return lovefield.run("selectAllSubtests")})
+      .then((subtestData) => {$scope.$apply(function(){
+                                $scope.progressBarWidth = 100*10/totalTasks + "%";
+                              })
+                             duplicates = duplicates.concat(subtestData[1]);
+                             return lovefield.run("selectAllSubtests")})
       // adding subtest results
-      .then((subtests) => { bar.style.width=100*11/totalTasks + "%";
-                            return lovefield.run("insertSubtestResults",
-                                                [resultData, subtests, testRunData])})
-      .then(() => { document.getElementById("progressOutline").style.visibility="hidden";
-                    duplicates});
+      .then((subtests) => {$scope.$apply(function(){
+                            $scope.progressBarWidth = 100*11/totalTasks + "%";
+                          })
+                          return lovefield.run("insertSubtestResults",[resultData, subtests, testRunData])})
+      .then(() => {$scope.$apply(function(){
+                    $scope.progressBarVisibility = "hidden";
+                  })
+                  duplicates});
   }
 
   /*
@@ -204,7 +225,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     $scope.busy = true;
     var evt = $scope.fileEvent;
     var file = evt.target.files[0];
-    resultsModel.addResultsFromLogs(file, $scope.upload.runName, "read")
+    resultsModel.addResultsFromLogs(file, $scope.upload.runName, "read", $scope)
     .then((duplicates) => updateWarnings(duplicates))
     .then(updateRuns)
     .then(() => {
