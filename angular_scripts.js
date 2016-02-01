@@ -118,7 +118,7 @@ app.factory('ResultsModel',function() {
   return ResultsModel;
 });
 
-app.controller('wptviewController', function($scope, ResultsModel) {
+app.controller('wptviewController', function($scope, $location, ResultsModel) {
   $scope.results = null;
   $scope.warnings = [];
   $scope.showImport = false;
@@ -155,10 +155,40 @@ app.controller('wptviewController', function($scope, ResultsModel) {
       });
   }
 
+  function checkQuery() {
+    var run_strings = [];
+    if ($location.search() && $location.search().hasOwnProperty("urls")) {
+      run_strings = $location.search().urls.split(";");
+    }
+    var runs = [];
+    run_strings.forEach((run) => {
+      var parameters = run.split(",");
+      runs.push({
+        "url": parameters[0],
+        "name": parameters[1]
+      });
+    });
+    var add_runs = [];
+    runs.forEach((run) => {
+      console.log(run);
+      add_runs.push(
+        resultsModel.addResultsFromLogs(run.url, run.name, "readURL")
+        .then((duplicates) => updateWarnings(duplicates))
+      );
+    });
+    return Promise.all(add_runs);
+  }
+
+  // first updateRuns() helps initialize the database
   updateRuns().then(() => {
-    $scope.busy = false;
-    $scope.$apply();
+    checkQuery().then(() => {
+      updateRuns().then(() => {
+        $scope.busy = false;
+        $scope.$apply();
+      });
+    });
   });
+
 
   function updateWarnings(duplicates) {
     $scope.$apply(function() {
