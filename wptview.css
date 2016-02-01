@@ -7,7 +7,7 @@
 }
 
 body {
-    margin: 0;
+    margin-bottom: 110px;
 }
 
 h1 {
@@ -16,6 +16,18 @@ h1 {
     width: 100%;
     padding: 0.5em;
     background-color: #e7ebf1;
+}
+
+.detailsPanel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 80px;
+    width: 100%;
+    background-color: #FFFFFF;
+    border-top: #000000;
+    border-style: solid;
+    padding: 1%;
 }
 
 #wptview {
@@ -69,6 +81,10 @@ tbody > tr > td {
 
 .expected, .result {
     width: 5em;
+}
+
+.result {
+    cursor: pointer;
 }
 
 .PASS, .OK {

@@ -125,6 +125,14 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.busy = true;
   $scope.runs = null;
   $scope.upload = {};
+  $scope.displayError = {
+      test: "",
+      subtest: "",
+      expected: "",
+      status: "",
+      error: "",
+      visible: false
+  }
   $scope.resultsView = {
       limit: 50,
       firstPage: true,
@@ -331,6 +339,15 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.warning_message = function() {
     return $scope.warnings.length + " warnings found.";
   }
+
+  $scope.showError = function(run, result) {
+    $scope.displayError.test = result.test;
+    $scope.displayError.subtest = result.subtest;
+    $scope.displayError.expected = run.expected;
+    $scope.displayError.status = run.status;
+    $scope.displayError.error = run.message;
+    $scope.displayError.visible = true;
+ }
 
   function organizeResults(results) {
     var testMap = {};
