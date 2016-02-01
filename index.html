@@ -6,13 +6,13 @@
 <h1>Web Platform Tests Viewer</h1>
 <div id="wptview" ng-app="wptview" ng-controller="wptviewController" ng-cloak>
 
-  <!--
   <span us-spinner="{radius: 20, length: 15}" spinner-on="busy"/>
--->
-  <div ng-style="{'visibility' : progressBarVisibility}" id="progressOutline">
-    <div ng-style="{'width' : progressBarWidth}" id="progressBar">
+
+  <div ng-style="{'visibility' : progressVisibility}" id="progressOutline">
+    <div ng-style="{'width' : progressValue}" id="progressBar">
     </div>
   </div>
+
 
   <section>
     <h2>Log Files</h2>
