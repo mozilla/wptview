@@ -10,6 +10,22 @@ app.directive('customOnChange', function() {
   };
 });
 
+app.directive('file', function(){
+  return {
+    scope: {
+      file: '='
+    },
+    link: function(scope, element, attrs){
+      element.bind('change', function(event){
+        var files = event.target.files;
+        var file = files[0];
+        scope.file = file ? file.name : undefined;
+        scope.$apply();
+      });
+    }
+  };
+});
+
 app.filter('arrFilter', function() {
   return function(collection, currentRun) {
     var output = [];
@@ -124,6 +140,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   $scope.results = null;
   $scope.warnings = [];
   $scope.showImport = false;
+  $scope.fileName = undefined;
   $scope.busy = true;
   $scope.runs = null;
   $scope.upload = {};
@@ -295,7 +312,6 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   }
 
   $scope.newFile = function(evt) {
-    $scope.isFileEmpty = false;
     $scope.fileEvent = evt;
     $scope.$apply();
   }
