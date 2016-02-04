@@ -44,7 +44,7 @@
         <div class="import" ng-hide="!showImport">
           <form name="fileInput" novalidate>
             <input type="radio" ng-model="upload.logSrc" value="file">Upload File</input><br>
-              <input name="logfile" type="file" id="log_file" custom-on-change="newFile" value="Select File" ng-disabled="busy || upload.logSrc =! 'file'"><br>
+              <input name="logfile" type="file" id="log_file" custom-on-change="newFile" value="Select File" ng-disabled="busy || upload.logSrc != 'file'"><br>
             <input type="radio" ng-model="upload.logSrc" value="url">Fetch from URL</input><br>
               <input name="log_url" type="url" id="log_url" ng-model="upload.logUrl" placeholder="URL" ng-disabled="busy || upload.logSrc != 'url'"/>
               <br><br>
