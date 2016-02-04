@@ -166,18 +166,27 @@ app.controller('wptviewController', function($scope, $location, ResultsModel) {
       run_strings = $location.search().urls.split(";");
     }
     var runs = [];
-    var run_names = $scope.runs.map((run) => run.name);
+    var run_names = {};
+    $scope.runs.forEach((run) => {
+      run_names[run.name] = 1;
+    });
     run_strings.forEach((run) => {
       var parameters = run.split(",");
-      var add_run = run_names.indexOf(parameters[1]) == -1 ? true : false;
-      if (add_run) {
-        run_names.push(parameters[1]);
-        runs.push({
-          "url": parameters[0],
-          "name": parameters[1]
-        });
+      if (run_names.hasOwnProperty(parameters[1])) {
+        var original_name = parameters[1];
+        while (run_names.hasOwnProperty(parameters[1])) {
+          run_names[original_name] += 1;
+          parameters[1] = original_name + " (" + run_names[original_name] + ")";
+        }
+      } else {
+        run_names[parameters[1]] = 1;
       }
+      runs.push({
+        "url": parameters[0],
+        "name": parameters[1]
+      });
     });
+    console.log(runs);
     var add_runs = runs.map((run) => addRun(run.url, run.name, "readURL"));
     return Promise.all(add_runs);
   }
