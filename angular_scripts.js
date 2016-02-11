@@ -89,7 +89,7 @@ app.factory('ResultsModel',function() {
       .then(() => duplicates);
   }
 
-  /*
+    /*
     Load the results of a specified number of tests, ordered by test id, either taking all
     results above a lower limit test id, all results below an upper limit id, or all results
     starting from the first test.
@@ -115,6 +115,10 @@ app.factory('ResultsModel',function() {
     return this.service.run("getRuns");
   }
 
+  ResultsModel.prototype.editRunName = function(run_id, newRunName) {
+    return this.service.run("editRunName", [run_id, newRunName])
+  }
+
   return ResultsModel;
 });
 
@@ -122,6 +126,7 @@ app.controller('wptviewController', function($scope, $location, ResultsModel) {
   $scope.results = null;
   $scope.warnings = [];
   $scope.showImport = false;
+  $scope.editSelected = false;
   $scope.busy = true;
   $scope.runs = null;
   $scope.upload = {};
@@ -248,6 +253,54 @@ app.controller('wptviewController', function($scope, $location, ResultsModel) {
     });
   }
 
+  $scope.editName = function(rowNo, run_id) {
+    if(!$scope.editSelected) {
+      $scope.editSelected = true;
+      var runs = [];
+      var names = [];
+      var runsTable = document.getElementById("runsTable");
+      var nameCell = runsTable.rows[rowNo+1].cells[1];
+      var prevName = nameCell.innerHTML;
+      var edit_images = document.getElementsByName("edit");
+      nameCell.innerHTML='<input type="text" id="currentEdit">';
+      document.onkeydown = function(evt) {
+        evt = evt || window.event;
+        //Enter key to confirm name
+        if (evt.keyCode == 13 && $scope.editSelected) {          
+          var curName = document.getElementById("currentEdit").value;
+          if(!(curName === null || curName.match(/^\s*$/) !== null)) {
+            return resultsModel.getRuns()
+              .then((runsData) => {
+                runs = runsData;
+                for(var i=0; i<runs.length ; i++) {
+                  names.push(runs[i].name);
+                }
+                if(names.indexOf(curName) === -1) {
+                  resultsModel.editRunName(run_id, curName)
+                    .then(() => {console.log("Name successfully edited.");})
+                  nameCell.innerHTML = curName;
+                  prevName = nameCell.innerHTML;
+                  $scope.editSelected = false;
+                }
+                else {
+                  console.log("Name already exists in DB");
+                  document.getElementById("currentEdit").style.borderColor = "red";
+                }
+              })
+          }
+          else {
+            document.getElementById("currentEdit").style.borderColor = "red";
+          }
+        }
+        //Escape key to exit edit mode
+        else if (evt.keyCode == 27 && $scope.editSelected) {
+          nameCell.innerHTML = prevName;
+          $scope.editSelected = false;
+        }
+      };
+    } 
+  }  
+
   $scope.clearTable = function(run_id) {
     $scope.busy = true;
     resultsModel.removeResults(run_id)
@@ -281,6 +334,7 @@ app.controller('wptviewController', function($scope, $location, ResultsModel) {
       $scope.$apply();
     });
   }
+
 
   // http://jsfiddle.net/koldev/cw7w5/
   function saveData(data, fileName) {
