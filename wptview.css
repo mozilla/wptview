@@ -31,7 +31,7 @@ h1 {
     padding-right: 16px;
 }
 
-#progressOutline {
+#progressBar {
    width: 40%;
    height: 20px;
    margin-left: 30%;
@@ -43,14 +43,6 @@ h1 {
    visibility: hidden;
  }
  
-#progressBar {
-   width: 0%;
-   height: 100%;
-   border-radius: 9px;
-   position: absolute;
-   background-color: blue;
- }
-
 table {
     border-collapse: collapse;
 }

@@ -8,11 +8,7 @@
 
   <span us-spinner="{radius: 20, length: 15}" spinner-on="busy"/>
 
-  <div ng-style="{'visibility' : progressVisibility}" id="progressOutline">
-    <div ng-style="{'width' : progressValue}" id="progressBar">
-    </div>
-  </div>
-
+    <progress max="100" value="{{ progressValue }}" ng-style="progressBarStyle"> </progress>
 
   <section>
     <h2>Log Files</h2>
