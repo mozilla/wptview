@@ -118,7 +118,7 @@ app.factory('ResultsModel',function() {
   return ResultsModel;
 });
 
-app.controller('wptviewController', function($scope, ResultsModel) {
+app.controller('wptviewController', function($scope, $location, ResultsModel) {
   $scope.results = null;
   $scope.warnings = [];
   $scope.showImport = false;
@@ -155,10 +155,50 @@ app.controller('wptviewController', function($scope, ResultsModel) {
       });
   }
 
-  updateRuns().then(() => {
+  function addRun(source, name, type) {
+    return resultsModel.addResultsFromLogs(source, name, type)
+    .then((duplicates) => {return updateWarnings(duplicates)});
+  }
+
+  function checkQuery() {
+    var run_strings = [];
+    if ($location.search() && $location.search().hasOwnProperty("urls")) {
+      run_strings = $location.search().urls.split(";");
+    }
+    var runs = [];
+    var run_names = {};
+    $scope.runs.forEach((run) => {
+      run_names[run.name] = 1;
+    });
+    run_strings.forEach((run) => {
+      var parameters = run.split(",");
+      if (run_names.hasOwnProperty(parameters[1])) {
+        var original_name = parameters[1];
+        while (run_names.hasOwnProperty(parameters[1])) {
+          parameters[1] = original_name + " (" + run_names[original_name] + ")";
+          run_names[original_name] += 1;
+        }
+      } else {
+        run_names[parameters[1]] = 1;
+      }
+      runs.push({
+        "url": parameters[0],
+        "name": parameters[1]
+      });
+    });
+    var add_runs = runs.map((run) => addRun(run.url, run.name, "readURL"));
+    return Promise.all(add_runs);
+  }
+
+  // first updateRuns() helps initialize the database
+  updateRuns()
+  .then(() => checkQuery())
+  .then(() => updateRuns())
+  .then(() => {
     $scope.busy = false;
     $scope.$apply();
   });
+
 
   function updateWarnings(duplicates) {
     $scope.$apply(function() {
@@ -187,8 +227,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     $scope.busy = true;
     var evt = $scope.fileEvent;
     var file = evt.target.files[0];
-    resultsModel.addResultsFromLogs(file, $scope.upload.runName, "read")
-    .then((duplicates) => updateWarnings(duplicates))
+    addRun(file, $scope.upload.runName, "read")
     .then(updateRuns)
     .then(() => {
       $scope.isFileEmpty = true;
@@ -200,8 +239,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
 
   $scope.fetchFromUrl = function () {
     $scope.busy = true;
-    resultsModel.addResultsFromLogs($scope.upload.logUrl, $scope.upload.runName, "readURL")
-    .then((duplicates) => updateWarnings(duplicates))
+    addRun($scope.upload.logUrl, $scope.upload.runName, "readURL")
     .then(updateRuns)
     .then(() => {
       $scope.upload.runName = "";
