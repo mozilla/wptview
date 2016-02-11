@@ -5,7 +5,10 @@
 
 <h1>Web Platform Tests Viewer</h1>
 <div id="wptview" ng-app="wptview" ng-controller="wptviewController" ng-cloak>
+
   <span us-spinner="{radius: 20, length: 15}" spinner-on="busy"/>
+
+    <progress max="100" value="{{ progressValue }}" ng-style="progressBarStyle"> </progress>
 
   <section>
     <h2>Log Files</h2>
