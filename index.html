@@ -17,18 +17,20 @@
       <div>
         <table id="runsTable">
           <tr>
+            <th></th>
             <th>Run Name</th>
             <th>Results Loaded</th>
             <th></th>
           </tr>
           <tr ng-repeat="run in runs">
+            <td><input type="checkbox" ng-model="run.enabled" ng-change="switchRun(run)" ng-disabled="busy"></td>
             <td>{{ run.name }}</td>
             <td>{{ run.count }}</td>
             <td><button ng-click="clearTable(run.run_id)" ng-disabled="busy">Clear</button></td>
           </tr>
           <tfoot>
             <tr>
-              <td colspan=2></td>
+              <td colspan=3></td>
               <td><button ng-click="clearTable()" ng-disabled="busy || !runs.length">Clear All</button></td>
             </tr>
           </tfoot>
@@ -91,7 +93,7 @@
         </form>
         <form ng-repeat="i in range(1, filter.statusFilter.length+1)">
           <select ng-disabled="busy" ng-model="filter.statusFilter[$index].run">
-            <option ng-repeat="run in runs" value="{{ run.name }}">{{ run.name }}</option>
+            <option ng-repeat="run in runs | enabledFilter" value="{{ run.name }}">{{ run.name }}</option>
             <option ng-if="runs.length > 1" value="ALL">ALL</option>
           </select>
           <select ng-disabled="busy" ng-model="filter.statusFilter[$index].equality">
@@ -126,16 +128,16 @@
       <tr>
         <th rowspan="2">Test</th>
         <th rowspan="2">Subtest</th>
-        <th colspan="2" ng-repeat="run in runs">{{ run.name }}</th>
+        <th colspan="2" ng-repeat="run in runs | enabledFilter">{{ run.name }}</th>
       </tr>
       <tr>
-        <th ng-repeat-start="run in runs">Expected</th>
+        <th ng-repeat-start="run in runs | enabledFilter">Expected</th>
         <th ng-repeat-end>Actual</th>
       </tr>
       <tr ng-repeat="result in results">
         <td>{{ result.test }}</td>
         <td>{{ result.subtest }}</td>
-        <td ng-repeat-start="run in result.runs" class="expected {{run.expected}}">{{ run.expected }}</td>
+        <td ng-repeat-start="run in result.runs | enabledFilter" class="expected {{run.expected}}">{{ run.expected }}</td>
         <td ng-repeat-end class="result {{run.status}}">{{ run.status }}</td>
       </tr>
     </table>

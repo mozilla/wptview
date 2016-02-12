@@ -55,6 +55,7 @@ LovefieldService.prototype.buildSchema_ = function() {
   schemaBuilder.createTable('test_runs').
       addColumn('run_id', lf.Type.INTEGER).
       addColumn('name', lf.Type.STRING).
+      addColumn('enabled', lf.Type.BOOLEAN).
       addPrimaryKey(['run_id'],true);
   schemaBuilder.createTable('tests').
       addColumn('id', lf.Type.INTEGER).
@@ -97,12 +98,22 @@ LovefieldService.prototype.insertTestRuns = function(runName, testRuns) {
   var testRunRows = [];
   var test_runs = this.test_runs;
   testRunRows.push(test_runs.createRow({
-    'name': runName
+    'name': runName,
+    'enabled': true
   }));
   var q1 = this.db_.
       insert().
       into(test_runs).
       values(testRunRows);
+  return q1.exec();
+}
+
+LovefieldService.prototype.switchRuns = function(run_ids, enabled) {
+  var test_runs = this.test_runs;
+  var q1 = this.db_.
+      update(test_runs).
+      set(test_runs.enabled, enabled).
+      where(test_runs.run_id.in(run_ids));
   return q1.exec();
 }
 
@@ -437,7 +448,7 @@ LovefieldService.prototype.selectFilteredResults = function(filter, runs, minTes
       .from(tests)
       .innerJoin(test_results, tests.id.eq(test_results.test_id))
       .innerJoin(test_runs, test_results.run_id.eq(test_runs.run_id))
-      .where(tests.id.in(test_list))
+      .where(lf.op.and(tests.id.in(test_list), test_runs.enabled.eq(true)))
       .orderBy(tests.id)
       .orderBy(test_runs.run_id)
       .exec();
