@@ -2,11 +2,11 @@
 <meta charset=utf-8>
 <title>Web Platform Tests Results</title>
 <link rel=stylesheet href="wptview.css">
-<h1>Web Platform Tests Viewer</h1>
 <div id="wptview" ng-app="wptview" ng-controller="wptviewController" ng-cloak>
   <span us-spinner="{radius: 20, length: 15}" spinner-on="busy"/>
 
-  <div ng-click="displayError.visible = false">
+  <div ng-click="displayError.visible = false" class="bodys">
+  <h1>Web Platform Tests Viewer</h1>
     <section>
       <h2>Log Files</h2>
       <p ng-if="runs === null">
@@ -145,11 +145,11 @@
     <p>
       {{ warning_message() }}
     </p>
-    <div ng-show="displayError.visible" class="detailsPanel">
-      <b>Test</b> : {{displayError.test}} <b>Subtest</b> : {{displayError.subtest}}<br><br>
-      <b>Expected</b> : {{displayError.expected}} <b>Got</b> : {{displayError.status}}<br><br>
-      <b>Message</b> : {{ displayError.error }}
-    </div>
+  </div>
+  <div ng-show="displayError.visible" class="detailsPanel">
+    <b>Test</b> : {{displayError.test}} <b>Subtest</b> : {{displayError.subtest}}<br><br>
+    <b>Expected</b> : {{displayError.expected}} <b>Got</b> : {{displayError.status}}<br>
+    <p id="message"><b>Message</b> : {{ displayError.error }}</p>
   </div>
 </div>
 <script src="angular.min.js"></script>

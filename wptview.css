@@ -6,8 +6,12 @@
     background-color: #f8f8f8;
 }
 
-body {
+.bodys {
+    display: inline-block;
+    height: 80vh;
+    width: 100%;
     margin-bottom: 110px;
+    overflow-y: auto;
 }
 
 h1 {
@@ -18,16 +22,19 @@ h1 {
     background-color: #e7ebf1;
 }
 
+#message {
+    font-family: "Courier New", Courier, monospace;
+}
 .detailsPanel {
     position: fixed;
     bottom: 0;
     left: 0;
-    height: 80px;
+    height: 15vh;
     width: 100%;
     background-color: #FFFFFF;
-    border-top: #000000;
-    border-style: solid;
+    border-top: solid black;
     padding: 1%;
+    overflow-y: auto;
 }
 
 #wptview {
