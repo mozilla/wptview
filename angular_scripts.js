@@ -60,11 +60,23 @@ app.factory('ResultsModel',function() {
     var testData = null;
     var testRunData = null;
     var duplicates = null;
+    var runType = null;
+    if (fetchFunc === "readURL") {
+      runType = {
+        "type": "url",
+        "url": source
+      };
+    } else if (fetchFunc === "read") {
+      runType = {
+        "type": "file",
+        "url": null
+      };
+    }
     return this.logReader.run(fetchFunc, [source])
       .then((data) => {resultData = data})
       // Filling the test_runs table
       .then(() => {return lovefield.run("selectParticularRun", [runName])})
-      .then((testRuns) => {return lovefield.run("insertTestRuns", [runName, testRuns])})
+      .then((testRuns) => {return lovefield.run("insertTestRuns", [runType, runName, testRuns])})
       // Selecting current tests table, adding extra entries only
       .then((testRuns) => {testRunData = testRuns;
                            return lovefield.run("selectAllParentTests")})
@@ -118,6 +130,10 @@ app.factory('ResultsModel',function() {
     return this.service.run("getRuns");
   }
 
+  ResultsModel.prototype.getRunURLs = function() {
+    return this.service.run("getRunURLs");
+  }
+
   return ResultsModel;
 });
 
@@ -163,7 +179,12 @@ app.controller('wptviewController', function($scope, $location, ResultsModel) {
     .then((duplicates) => {return updateWarnings(duplicates)});
   }
 
-  function checkQuery() {
+  function getRunURLs() {
+    return resultsModel.getRunURLs();
+  }
+
+  function checkQuery(urls) {
+    urls = urls.map((result) => result.url);
     var run_strings = [];
     if ($location.search() && $location.search().hasOwnProperty("urls")) {
       run_strings = $location.search().urls.split(";");
@@ -175,19 +196,21 @@ app.controller('wptviewController', function($scope, $location, ResultsModel) {
     });
     run_strings.forEach((run) => {
       var parameters = run.split(",");
-      if (run_names.hasOwnProperty(parameters[1])) {
-        var original_name = parameters[1];
-        while (run_names.hasOwnProperty(parameters[1])) {
-          parameters[1] = original_name + " (" + run_names[original_name] + ")";
-          run_names[original_name] += 1;
+      if (urls.indexOf(parameters[0]) == -1) {
+        if (run_names.hasOwnProperty(parameters[1])) {
+          var original_name = parameters[1];
+          while (run_names.hasOwnProperty(parameters[1])) {
+            parameters[1] = original_name + " (" + run_names[original_name] + ")";
+            run_names[original_name] += 1;
+          }
+        } else {
+          run_names[parameters[1]] = 1;
         }
-      } else {
-        run_names[parameters[1]] = 1;
+        runs.push({
+          "url": parameters[0],
+          "name": parameters[1]
+        });
       }
-      runs.push({
-        "url": parameters[0],
-        "name": parameters[1]
-      });
     });
     var disabledRuns = [];
     if (runs.length) {
@@ -200,7 +223,8 @@ app.controller('wptviewController', function($scope, $location, ResultsModel) {
 
   // first updateRuns() helps initialize the database
   updateRuns()
-  .then(() => checkQuery())
+  .then(() => getRunURLs())
+  .then((urls) => checkQuery(urls))
   .then(() => updateRuns())
   .then(() => {
     $scope.busy = false;
@@ -265,6 +289,7 @@ app.controller('wptviewController', function($scope, $location, ResultsModel) {
       $scope.$apply();
     });
   }
+
   $scope.clearTable = function(run_id) {
     $scope.busy = true;
     resultsModel.removeResults(run_id)
