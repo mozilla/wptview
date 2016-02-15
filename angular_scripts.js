@@ -26,7 +26,7 @@ app.filter('enabledFilter', function() {
   return function(collection) {
     var output = [];
     collection.forEach((item) => {
-        if (item.enabled == true) {
+        if (item.enabled) {
             output.push(item);
         }
     });

@@ -312,7 +312,9 @@ LovefieldService.prototype.selectFilteredResults = function(filter, runs, minTes
   filter.statusFilter.forEach((x) => {
     if (x.run == "ALL") {
       runs.forEach((run) => {
-        joinRuns[run.name] = 1;
+        if (run.enabled) {
+          joinRuns[run.name] = 1;
+        }
       });
     } else {
       joinRuns[x.run] = 1;
@@ -353,9 +355,11 @@ LovefieldService.prototype.selectFilteredResults = function(filter, runs, minTes
     var booleanOp = constraint.equality === "is" ? "or" : "and";
     if (constraint.run == "ALL") {
       runs.forEach((run) => {
-        runConditions = constraint.targets.map((x) => aliases[run.name].resultAlias.status[op](x));
-        var condition = lf.op[booleanOp].apply(lf.op[booleanOp], runConditions);
-        whereConditions.push(condition);
+        if (run.enabled) {
+          runConditions = constraint.targets.map((x) => aliases[run.name].resultAlias.status[op](x));
+          var condition = lf.op[booleanOp].apply(lf.op[booleanOp], runConditions);
+          whereConditions.push(condition);
+        }
       });
     } else {
       constraint.targets.forEach((x, j) => {
