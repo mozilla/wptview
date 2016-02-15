@@ -12,13 +12,13 @@ app.directive('customOnChange', function() {
 
 app.filter('arrFilter', function() {
   return function(collection, currentRun) {
-    var output = [];
-    collection.forEach((item) => {
-        if (currentRun != item.name && currentRun != "ALL") {
-            output.push(item);
-        }
-    });
-    return output;
+    return collection.filter((item) => currentRun != item.name && currentRun != "ALL" && item.enabled);
+  }
+});
+
+app.filter('enabledFilter', function() {
+  return function(collection) {
+    return collection.filter((item) => item.enabled);
   }
 });
 
@@ -102,6 +102,9 @@ app.factory('ResultsModel',function() {
                                      there is no upper limit.
     @param {(number)} limit - Number of tests to load.
    */
+  ResultsModel.prototype.switchRuns = function(run_ids, enabled) {
+    return this.service.run("switchRuns", [run_ids, enabled]);
+  };
   ResultsModel.prototype.getResults = function(filter, runs, minTestId, maxTestId, limit) {
     return this.service.run("selectFilteredResults",
                             [filter, runs, minTestId, maxTestId, limit]);
@@ -186,8 +189,13 @@ app.controller('wptviewController', function($scope, $location, ResultsModel) {
         "name": parameters[1]
       });
     });
+    var disabledRuns = [];
+    if (runs.length) {
+      disabledRuns = $scope.runs.map((run) => run.run_id);
+    }
     var add_runs = runs.map((run) => addRun(run.url, run.name, "readURL"));
-    return Promise.all(add_runs);
+    return resultsModel.switchRuns(disabledRuns, false)
+      .then(() => {return Promise.all(add_runs)});
   }
 
   // first updateRuns() helps initialize the database
@@ -248,6 +256,15 @@ app.controller('wptviewController', function($scope, $location, ResultsModel) {
     });
   }
 
+  $scope.switchRun = function(run) {
+    $scope.busy = true;
+    resultsModel.switchRuns([run.run_id], run.enabled)
+    .then(() => {
+      $scope.busy = false;
+      $scope.results = null;
+      $scope.$apply();
+    });
+  }
   $scope.clearTable = function(run_id) {
     $scope.busy = true;
     resultsModel.removeResults(run_id)
@@ -385,19 +402,17 @@ app.controller('wptviewController', function($scope, $location, ResultsModel) {
           testMap[result.test][result.title].push({
             'run_id': $scope.runs[i].run_id,
             'run_name': $scope.runs[i].run_name,
+            'enabled': $scope.runs[i].enabled,
             'status': "",
             'expected': "",
             'message': ""
           });
         }
       }
-      testMap[result.test][result.title][runIndex[result.run_id]] = {
-        'run_id': result.run_id,
-        'run_name': result.run_name,
-        'status': result.status,
-        'expected': result.expected,
-        'message': result.message
-      };
+      var x = testMap[result.test][result.title][runIndex[result.run_id]];
+      x.status = result.status;
+      x.expected = result.expected;
+      x.message = result.message;
     });
     var finalResults = [];
     for (var test in testMap) {
