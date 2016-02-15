@@ -56,6 +56,7 @@ LovefieldService.prototype.buildSchema_ = function() {
       addColumn('run_id', lf.Type.INTEGER).
       addColumn('name', lf.Type.STRING).
       addColumn('enabled', lf.Type.BOOLEAN).
+      addColumn('url', lf.Type.STRING).
       addPrimaryKey(['run_id'],true);
   schemaBuilder.createTable('tests').
       addColumn('id', lf.Type.INTEGER).
@@ -89,17 +90,27 @@ LovefieldService.prototype.buildSchema_ = function() {
 
 var testLogsRaw;
 
-LovefieldService.prototype.insertTestRuns = function(runName, testRuns) {
+// http://stackoverflow.com/questions/1701898/how-to-detect-whether-a-string-is-in-url-format-using-javascript#1701911
+function isUrl(s) {
+   var regexp = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/
+   return regexp.test(s);
+}
+
+LovefieldService.prototype.insertTestRuns = function(source, runName, testRuns) {
   if (testRuns.length != 0) {
     return new Promise(function(resolve, reject) {
       resolve(testRuns);
     });
   }
+  if (!isUrl(source)) {
+    source = "";
+  }
   var testRunRows = [];
   var test_runs = this.test_runs;
   testRunRows.push(test_runs.createRow({
     'name': runName,
-    'enabled': true
+    'enabled': true,
+    'url': source
   }));
   var q1 = this.db_.
       insert().
@@ -116,6 +127,7 @@ LovefieldService.prototype.switchRuns = function(run_ids, enabled) {
       where(test_runs.run_id.in(run_ids));
   return q1.exec();
 }
+
 
 LovefieldService.prototype.insertTests = function(testLogsRaw, currentTests) {
   var testRows = [];
@@ -521,6 +533,15 @@ LovefieldService.prototype.selectParticularRun = function(runName) {
         .where(test_runs.name.eq(runName))
         .exec();
     });
+}
+
+LovefieldService.prototype.getRunURLs = function() {
+  var test_runs = this.test_runs;
+  return this.db_.
+    select(test_runs.url).
+    from(test_runs).
+    where(test_runs.url.neq("")).
+    exec();
 }
 
 LovefieldService.prototype.getRuns = function() {
