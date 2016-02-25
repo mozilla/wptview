@@ -60,11 +60,23 @@ app.factory('ResultsModel',function() {
     var testData = null;
     var testRunData = null;
     var duplicates = null;
+    var runType = null;
+    if (fetchFunc === "readURL") {
+      runType = {
+        "type": "file",
+        "url": source
+      };
+    } else if (fetchFunc === "read") {
+      runType = {
+        "type": "url",
+        "url": null
+      };
+    }
     return this.logReader.run(fetchFunc, [source])
       .then((data) => {resultData = data})
       // Filling the test_runs table
       .then(() => {return lovefield.run("selectParticularRun", [runName])})
-      .then((testRuns) => {return lovefield.run("insertTestRuns", [source, runName, testRuns])})
+      .then((testRuns) => {return lovefield.run("insertTestRuns", [runType, runName, testRuns])})
       // Selecting current tests table, adding extra entries only
       .then((testRuns) => {testRunData = testRuns;
                            return lovefield.run("selectAllParentTests")})
@@ -277,6 +289,7 @@ app.controller('wptviewController', function($scope, $location, ResultsModel) {
       $scope.$apply();
     });
   }
+
   $scope.clearTable = function(run_id) {
     $scope.busy = true;
     resultsModel.removeResults(run_id)

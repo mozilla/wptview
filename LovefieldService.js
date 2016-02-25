@@ -57,6 +57,7 @@ LovefieldService.prototype.buildSchema_ = function() {
       addColumn('name', lf.Type.STRING).
       addColumn('enabled', lf.Type.BOOLEAN).
       addColumn('url', lf.Type.STRING).
+      addNullable(['url']).
       addPrimaryKey(['run_id'],true);
   schemaBuilder.createTable('tests').
       addColumn('id', lf.Type.INTEGER).
@@ -90,27 +91,18 @@ LovefieldService.prototype.buildSchema_ = function() {
 
 var testLogsRaw;
 
-// http://stackoverflow.com/questions/1701898/how-to-detect-whether-a-string-is-in-url-format-using-javascript#1701911
-function isUrl(s) {
-   var regexp = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/
-   return regexp.test(s);
-}
-
-LovefieldService.prototype.insertTestRuns = function(source, runName, testRuns) {
+LovefieldService.prototype.insertTestRuns = function(runType, runName, testRuns) {
   if (testRuns.length != 0) {
     return new Promise(function(resolve, reject) {
       resolve(testRuns);
     });
-  }
-  if (!isUrl(source)) {
-    source = "";
   }
   var testRunRows = [];
   var test_runs = this.test_runs;
   testRunRows.push(test_runs.createRow({
     'name': runName,
     'enabled': true,
-    'url': source
+    'url': runType.url
   }));
   var q1 = this.db_.
       insert().
@@ -540,7 +532,7 @@ LovefieldService.prototype.getRunURLs = function() {
   return this.db_.
     select(test_runs.url).
     from(test_runs).
-    where(test_runs.url.neq("")).
+    where(test_runs.url.neq(null)).
     exec();
 }
 
