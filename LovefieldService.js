@@ -25,6 +25,7 @@ LovefieldService.prototype.onConnected_ = function() {
   this.test_runs = this.db_.getSchema().table('test_runs');
   this.tests = this.db_.getSchema().table('tests');
   this.test_results = this.db_.getSchema().table('test_results');
+  this.comments = this.db_.getSchema().table('comments');
 };
 
 
@@ -84,6 +85,17 @@ LovefieldService.prototype.buildSchema_ = function() {
         local: 'run_id',
         ref: 'test_runs.run_id'
       });
+  schemaBuilder.createTable('comments').
+      addColumn('id', lf.Type.INTEGER).
+      addColumn('comment', lf.Type.STRING).
+      addColumn('result_id', lf.Type.INTEGER).
+      addUnique("unique_fk", ['result_id']).
+      addForeignKey('fk_result_id', {
+        local: 'result_id',
+        ref: 'test_results.result_id'
+      }).
+      addNullable(['comment']).
+      addPrimaryKey(['id'], true);
 
   return schemaBuilder;
 };
@@ -449,6 +461,7 @@ LovefieldService.prototype.selectFilteredResults = function(filter, runs, minTes
         test_results.message.as("message"),
         test_results.status.as("status"),
         test_results.expected.as("expected"),
+        test_results.result_id.as("result_id"),
         tests.title.as("title"),
         test_runs.run_id.as("run_id"),
         test_runs.name.as("run_name")
@@ -563,4 +576,67 @@ LovefieldService.prototype.getRuns = function() {
       data.forEach((x) => x.count = counts[x.run_id]);
       return data;
     });
+}
+
+LovefieldService.prototype.selectComment = function(result_id) {
+  comments = this.comments;
+  return this.db_.select(comments.comment).
+    from(comments).
+    where(comments.result_id.eq(result_id)).
+    exec();
+}
+
+LovefieldService.prototype.insertComment = function(result_id, comment) {
+  comments = this.comments;
+  return this.db_.insert().
+    into(comments).
+    values([comments.createRow({'result_id':result_id, 'comment': comment})]).
+    exec();
+}
+
+LovefieldService.prototype.updateComment = function(result_id, comment) {
+  comments = this.comments;
+  return this.db_.update(comments).
+    set(comments.comment, comment).
+    where(comments.result_id.eq(result_id)).
+    exec();
+}
+
+LovefieldService.prototype.deleteComment = function(result_id) {
+  comments = this.comments;
+  return this.db_.delete().
+    from(comments).
+    where(comments.result_id.eq(result_id)).
+    exec();
+}
+
+LovefieldService.prototype.deleteComments = function(run_id) {
+  db_ = this.db_;
+  comments = this.comments;
+  test_results = this.test_results;
+  q1 = db_.select(comments.result_id.as("result_id"))
+    .from(comments)
+    .innerJoin(test_results, test_results.result_id.eq(comments.result_id))
+    .where(test_results.run_id.eq(run_id));
+  q2 = db_.select(test_results.result_id.as("result_id"))
+    .from(test_results);
+
+  var tx = db_.createTransaction();
+  if(run_id)
+    var rv = tx.exec([q1]);
+  else
+    var rv = tx.exec([q2]);
+
+  rv = rv
+    .then((ids) => {
+      result_ids = [];
+      ids[0].forEach((id) => {
+          result_ids.push(id.result_id);
+      });
+      return db_.delete()
+        .from(comments)
+        .where(comments.result_id.in(result_ids))
+        .exec();
+    });
+  return rv;
 }
