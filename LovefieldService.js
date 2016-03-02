@@ -25,6 +25,7 @@ LovefieldService.prototype.onConnected_ = function() {
   this.test_runs = this.db_.getSchema().table('test_runs');
   this.tests = this.db_.getSchema().table('tests');
   this.test_results = this.db_.getSchema().table('test_results');
+  this.comments = this.db_.getSchema().table('comments');
 };
 
 
@@ -51,7 +52,7 @@ LovefieldService.prototype.getDbConnection = function() {
  * @private
  */
 LovefieldService.prototype.buildSchema_ = function() {
-  var schemaBuilder = lf.schema.create('wptview', 1);
+  var schemaBuilder = lf.schema.create('wptview', 2);
   schemaBuilder.createTable('test_runs').
       addColumn('run_id', lf.Type.INTEGER).
       addColumn('name', lf.Type.STRING).
@@ -84,6 +85,17 @@ LovefieldService.prototype.buildSchema_ = function() {
         local: 'run_id',
         ref: 'test_runs.run_id'
       });
+  schemaBuilder.createTable('comments').
+      addColumn('id', lf.Type.INTEGER).
+      addColumn('comment', lf.Type.STRING).
+      addColumn('result_id', lf.Type.INTEGER).
+      addUnique("unique_fk", ['result_id']).
+      addForeignKey('fk_result_id', {
+        local: 'result_id',
+        ref: 'test_results.result_id'
+      }).
+      addNullable(['comment']).
+      addPrimaryKey(['id'], true);
 
   return schemaBuilder;
 };
@@ -449,6 +461,7 @@ LovefieldService.prototype.selectFilteredResults = function(filter, runs, minTes
         test_results.message.as("message"),
         test_results.status.as("status"),
         test_results.expected.as("expected"),
+        test_results.result_id.as("result_id"),
         tests.title.as("title"),
         test_runs.run_id.as("run_id"),
         test_runs.name.as("run_name")
@@ -562,5 +575,86 @@ LovefieldService.prototype.getRuns = function() {
     .then((data) => {
       data.forEach((x) => x.count = counts[x.run_id]);
       return data;
+    });
+}
+
+LovefieldService.prototype.selectComment = function(result_id){
+  return this.getDbConnection()
+    .then((db_conn) => {
+      db = db_conn;
+      comment_table = this.comments;
+      return db.select(comment_table.comment)
+        .from(comment_table)
+        .where(comment_table.result_id.eq(result_id))
+        .exec();
+    })
+}
+
+LovefieldService.prototype.insertComment = function(result_id, comment){
+  return this.getDbConnection()
+    .then((db_conn) => {
+      db = db_conn;
+      comment_table = this.comments;
+      return db.insert()
+        .into(comment_table)
+        .values([comment_table.createRow({'result_id':result_id, 'comment': comment})])
+        .exec();
+    })
+}
+
+LovefieldService.prototype.updateComment = function(result_id, comment){
+  return this.getDbConnection()
+    .then((db_conn) => {
+      db = db_conn;
+      comment_table = this.comments;
+      return db.update(comment_table)
+        .set(comment_table.comment, comment)
+        .where(comment_table.result_id.eq(result_id))
+        .exec();
+    })
+}
+
+LovefieldService.prototype.deleteComment = function(result_id){
+  return this.getDbConnection()
+    .then((db_conn) => {
+      db = db_conn;
+      comment_table = this.comments;
+      return db.delete()
+        .from(comment_table)
+        .where(comment_table.result_id.eq(result_id))
+        .exec();
+    })
+}
+
+LovefieldService.prototype.deleteComments = function(run_id){
+  return this.getDbConnection()
+    .then((db_conn) => {
+      db = db_conn;
+      comment_table = this.comments;
+      test_results = this.test_results;
+      q1 = db.select(comment_table.result_id)
+        .from(comment_table)
+        .innerJoin(test_results, test_results.run_id.eq(run_id))
+      q2 = db.select(test_results.result_id)
+        .from(test_results);
+
+      var tx = db.createTransaction();
+      if(run_id)
+        var rv = tx.exec([q1]);
+      else
+        var rv = tx.exec([q2]);
+
+      rv = rv
+        .then((ids) => {
+          result_ids = [];
+          ids.forEach((id) => {result_ids.push(id.result_id);});
+          db = db_conn;
+          comment_table = this.comments;
+          return db.delete()
+            .from(comment_table)
+            .where(comment_table.result_id.in(result_ids))
+            .exec();
+        });
+      return rv;
     });
 }
