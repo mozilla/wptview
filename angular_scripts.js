@@ -122,8 +122,27 @@ app.factory('ResultsModel',function() {
                             [filter, runs, minTestId, maxTestId, limit]);
   }
 
+  ResultsModel.prototype.getComment = function(result_id) {
+    return this.service.run("selectComment", [result_id]);
+  }
+
+  ResultsModel.prototype.saveComment = function(result_id, comment, update) {
+    if(update) {
+      return this.service.run("updateComment", [result_id, comment]);
+    } else {
+      return this.service.run("insertComment", [result_id, comment]);
+    }
+  }
+
+  ResultsModel.prototype.deleteComment = function(result_id) {
+    return this.service.run("deleteComment", [result_id]);
+  }
+
   ResultsModel.prototype.removeResults = function(run_id) {
-    return this.service.run("deleteEntries", [run_id]);
+    return this.service.run("deleteComments", [run_id])
+      .then(() => {
+        this.service.run("deleteEntries", [run_id]);
+      });
   }
 
   ResultsModel.prototype.getRuns = function() {
@@ -137,7 +156,7 @@ app.factory('ResultsModel',function() {
   return ResultsModel;
 });
 
-app.controller('wptviewController', function($scope, $location, ResultsModel) {
+app.controller('wptviewController', function($scope, $location, $interval, ResultsModel) {
   $scope.results = null;
   $scope.warnings = [];
   $scope.showImport = false;
@@ -304,11 +323,11 @@ app.controller('wptviewController', function($scope, $location, ResultsModel) {
       .then(() => {
         $scope.results = null;
         $scope.warnings = []})
-    .then(updateRuns)
-    .then(() => {
-      $scope.busy = false;
-      $scope.$apply();
-    });
+      .then(updateRuns)
+      .then(() => {
+        $scope.busy = false;
+        $scope.$apply();
+      });
   }
 
   $scope.export = function() {
@@ -421,13 +440,58 @@ app.controller('wptviewController', function($scope, $location, ResultsModel) {
   }
 
   $scope.showError = function(run, result) {
+    saveComment();
+
     $scope.displayError.test = result.test;
     $scope.displayError.subtest = result.subtest;
     $scope.displayError.expected = run.expected;
     $scope.displayError.status = run.status;
     $scope.displayError.error = run.message;
-    $scope.displayError.visible = true;
- }
+    $scope.displayError.result_id = result.result_id;
+
+    $scope.busy = true;
+
+    resultsModel.getComment(result.result_id)
+      .then((comment) => {
+        if(comment.length) {
+          $scope.displayError.comment = comment[0].comment;
+        } else {
+          $scope.displayError.comment = "";
+        }
+        $scope.displayError.commentBox = $scope.displayError.comment;
+        $scope.displayError.visible = true;
+        $scope.displayError.commentSaveFunc = $interval(saveComment, 5000);
+
+        $scope.busy = false;
+        $scope.$apply();
+      });
+  }
+
+  $scope.closeError = function() {
+    $scope.displayError.visible = false;
+    saveComment();
+
+    // Stop periodic calls of the save function
+    if($scope.displayError.commentSaveFunc) {
+      $interval.cancel($scope.displayError.commentSaveFunc);
+      $scope.displayError.commentSaveFunc = undefined;
+    }
+  }
+
+  function saveComment() {
+    comment = $scope.displayError.comment;
+    comment_new = $scope.displayError.commentBox;
+    result_id = $scope.displayError.result_id;
+    if($scope.displayError.visible && comment !== comment_new) {
+      console.log("save comment");
+      if(comment_new == "") {
+        resultsModel.deleteComment(result_id);
+      } else {
+        resultsModel.saveComment(result_id, comment_new, comment != "");
+      }
+      $scope.displayError.comment = comment_new;
+    }
+  }
 
   function organizeResults(results) {
     var testMap = {};
@@ -439,9 +503,9 @@ app.controller('wptviewController', function($scope, $location, ResultsModel) {
         testMap[result.test] = {};
       }
       if (!testMap[result.test].hasOwnProperty(result.title)) {
-        testMap[result.test][result.title] = [];
+        testMap[result.test][result.title] = {runs: [], id: result.result_id};
         for (var i = 0; i < $scope.runs.length; i++) {
-          testMap[result.test][result.title].push({
+          testMap[result.test][result.title].runs.push({
             'run_id': $scope.runs[i].run_id,
             'run_name': $scope.runs[i].run_name,
             'enabled': $scope.runs[i].enabled,
@@ -451,7 +515,7 @@ app.controller('wptviewController', function($scope, $location, ResultsModel) {
           });
         }
       }
-      var x = testMap[result.test][result.title][runIndex[result.run_id]];
+      var x = testMap[result.test][result.title].runs[runIndex[result.run_id]];
       x.status = result.status;
       x.expected = result.expected;
       x.message = result.message;
@@ -462,7 +526,8 @@ app.controller('wptviewController', function($scope, $location, ResultsModel) {
         finalResults.push({
           'test': test,
           'subtest': subtest,
-          'runs': testMap[test][subtest]
+          'runs': testMap[test][subtest].runs,
+          'result_id': testMap[test][subtest].id
         });
       }
     }
