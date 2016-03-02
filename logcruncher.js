@@ -4,17 +4,31 @@ onmessage = messageAdapter(new LogReader());
 
 function LogReader() {}
 
-LogReader.prototype.read = function(file) {
-  return readFile(file)
-    .then((logData) => {return logCruncher(logData, testsFilter)});
+LogReader.prototype.read = read(readFile);
+LogReader.prototype.readURL = read(readURL);
+
+function read(reader) {
+  return (data) => {
+    return reader(data)
+      .then((logData) => {return getLogType(logData)();});
+  };
 }
 
-LogReader.prototype.readURL = function(url) {
-  return readURL(url)
-    .then((logData) => {return logCruncher(logData, testsFilter)});
+function getLogType(logData) {
+  var parsed = null;
+  var mozlogParser = () => parseMozlog(logData, testsFilter);
+  try {
+    parsed = JSON.parse(logData);
+  } catch(e) {
+    return mozlogParser;
+  }
+  if (!parsed.hasOwnProperty("results")) {
+    return mozlogParser;
+  }
+  return () => parseRunnerJSON(parsed);
 }
 
-function logCruncher(rawtext, filter) {
+function parseMozlog(rawtext, filter) {
   return new Promise(function (resolve, reject) {
     var JSONArray = [];
     var lines = rawtext.split('\n');
@@ -27,6 +41,28 @@ function logCruncher(rawtext, filter) {
         JSONArray.push(json);
       }
     }
+    resolve(JSONArray);
+  });
+}
+
+function parseRunnerJSON(parsedJson) {
+  return new Promise((resolve, reject) => {
+    var JSONArray = [];
+    parsedJson.results.forEach((result) => {
+      JSONArray.push({"action": "test_start",
+                      "test": result.test});
+      result.subtests.forEach((subtest) => {
+        JSONArray.push({"action": "test_status",
+                        "test": result.test,
+                        "subtest": subtest.name,
+                        "status": subtest.status,
+                        "message": subtest.message});
+      });
+      JSONArray.push({"action": "test_end",
+                      "test": result.test,
+                      "status": result.status,
+                      "message": result.message});
+    });
     resolve(JSONArray);
   });
 }
