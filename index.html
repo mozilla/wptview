@@ -5,7 +5,7 @@
 <div id="wptview" ng-app="wptview" ng-controller="wptviewController" ng-cloak>
   <span us-spinner="{radius: 20, length: 15}" spinner-on="busy"/>
 
-  <div ng-click="displayError.visible = false" class="page">
+  <div ng-click="closeError()" class="page">
   <h1>Web Platform Tests Viewer</h1>
   <section>
     <h2>Log Files</h2>
@@ -153,6 +153,10 @@
     <div><b>Expected</b> : <span class="{{ displayError.expected}}">{{ displayError.expected }}</span>
     <b>Got</b> : <span class="{{ displayError.status}}">{{ displayError.status }}</span></div>
     <div><p id="message"><b>Message</b> : {{ displayError.error }}</p></div>
+    <div>
+        <b style="vertical-align: top">Comments :</b>
+        <textarea ng-model="displayError.commentBox" ng-trim="false" cols="40" rows="3"></textarea>
+    </div>
   </div>
 </div>
 <script src="angular.min.js"></script>
