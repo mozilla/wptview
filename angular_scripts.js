@@ -122,6 +122,22 @@ app.factory('ResultsModel',function() {
                             [filter, runs, minTestId, maxTestId, limit]);
   }
 
+  ResultsModel.prototype.getComment = function(result_id) {
+    return this.service.run("selectComment", [result_id]);
+  }
+
+  ResultsModel.prototype.saveComment = function(result_id, comment, update) {
+    if (update) {
+      return this.service.run("updateComment", [result_id, comment]);
+    } else {
+      return this.service.run("insertComment", [result_id, comment]);
+    }
+  }
+
+  ResultsModel.prototype.deleteComment = function(result_id) {
+    return this.service.run("deleteComment", [result_id]);
+  }
+
   ResultsModel.prototype.removeResults = function(run_id) {
     return this.service.run("deleteEntries", [run_id]);
   }
@@ -137,7 +153,7 @@ app.factory('ResultsModel',function() {
   return ResultsModel;
 });
 
-app.controller('wptviewController', function($scope, $location, ResultsModel) {
+app.controller('wptviewController', function($scope, $location, $interval, ResultsModel) {
   $scope.results = null;
   $scope.warnings = [];
   $scope.showImport = false;
@@ -421,13 +437,60 @@ app.controller('wptviewController', function($scope, $location, ResultsModel) {
   }
 
   $scope.showError = function(run, result) {
+    saveComment();
+
     $scope.displayError.test = result.test;
     $scope.displayError.subtest = result.subtest;
     $scope.displayError.expected = run.expected;
     $scope.displayError.status = run.status;
     $scope.displayError.error = run.message;
-    $scope.displayError.visible = true;
- }
+    $scope.displayError.result_id = run.result_id;
+
+    $scope.busy = true;
+
+    resultsModel.getComment(run.result_id)
+      .then((comment) => {
+        if (comment.length) {
+          $scope.displayError.comment = comment[0].comment;
+        } else {
+          $scope.displayError.comment = "";
+        }
+        $scope.displayError.comment = comment.length ? comment[0].comment : "";
+        $scope.displayError.commentBox = $scope.displayError.comment;
+        $scope.displayError.visible = true;
+
+        $scope.busy = false;
+        $scope.$apply();
+      });
+  }
+
+  $scope.startCommentSaveTrigger = function() {
+    $scope.displayError.commentSaveTrigger = $interval(saveComment, 5000);
+  }
+
+  $scope.stopCommentSaveTrigger = function() {
+    saveComment();
+
+    // Stop periodic calls of the save function
+    if ($scope.displayError.commentSaveTrigger) {
+      $interval.cancel($scope.displayError.commentSaveTrigger);
+      $scope.displayError.commentSaveTrigger = undefined;
+    }
+  }
+
+  function saveComment() {
+    var comment = $scope.displayError.comment;
+    var commentNew = $scope.displayError.commentBox;
+    var resultId = $scope.displayError.result_id;
+    if ($scope.displayError.visible && comment !== commentNew) {
+      if (commentNew == "") {
+        resultsModel.deleteComment(resultId);
+      } else {
+        resultsModel.saveComment(resultId, commentNew, comment != "");
+      }
+      $scope.displayError.comment = commentNew;
+    }
+  }
 
   function organizeResults(results) {
     var testMap = {};
@@ -455,6 +518,7 @@ app.controller('wptviewController', function($scope, $location, ResultsModel) {
       x.status = result.status;
       x.expected = result.expected;
       x.message = result.message;
+      x.result_id = result.result_id;
     });
     var finalResults = [];
     for (var test in testMap) {
