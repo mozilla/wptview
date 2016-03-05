@@ -338,6 +338,14 @@ LovefieldService.prototype.selectFilteredResults = function(filter, runs, minTes
       }
     });
   });
+  // Account for the case where no status filters exist
+  if (filter.statusFilter.length === 0) {
+    runs.forEach((run) => {
+      if (run.enabled) {
+        joinRuns[run.name] = 1;
+      }
+    });
+  }
   // JOINs with results and runs table
   var aliases = {};
   Object.keys(joinRuns).forEach((run) => {
