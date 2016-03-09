@@ -5,7 +5,7 @@
 <div id="wptview" ng-app="wptview" ng-controller="wptviewController" ng-cloak>
   <span us-spinner="{radius: 20, length: 15}" spinner-on="busy"/>
 
-  <div ng-click="displayError.visible = false" class="page">
+  <div ng-click="displayError.visible = false;" class="page">
   <h1>Web Platform Tests Viewer</h1>
   <section>
     <h2>Log Files</h2>
@@ -148,11 +148,19 @@
   </p>
   </div>
   <div ng-if="displayError.visible" class="detailsPanel">
-    <div><b>Test</b> : {{ displayError.test }}</div>
-    <div><b>Subtest</b> : {{ displayError.subtest }}</div>
-    <div><b>Expected</b> : <span class="{{ displayError.expected}}">{{ displayError.expected }}</span>
-    <b>Got</b> : <span class="{{ displayError.status}}">{{ displayError.status }}</span></div>
-    <div><p id="message"><b>Message</b> : {{ displayError.error }}</p></div>
+    <div style="display: inline-block">
+      <div><b>Test</b> : {{ displayError.test }}</div>
+      <div><b>Subtest</b> : {{ displayError.subtest }}</div>
+      <div><b>Expected</b> : <span class="{{ displayError.expected}}">{{ displayError.expected }}</span>
+      <b>Got</b> : <span class="{{ displayError.status}}">{{ displayError.status }}</span></div>
+      <div><p id="message"><b>Message</b> : {{ displayError.error }}</p></div>
+    </div>
+    <div style="display: inline-block; vertical-align: top; margin-left: 20px;">
+        <b style="vertical-align: top">Comments :</b>
+        <textarea ng-model="displayError.commentBox" ng-trim="false" cols="40" rows="3"
+          ng-focus="startCommentSaveTrigger()"
+          ng-blur="stopCommentSaveTrigger()"></textarea>
+    </div>
   </div>
 </div>
 <script src="angular.min.js"></script>
