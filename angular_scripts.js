@@ -73,7 +73,7 @@ app.factory('ResultsModel',function() {
       };
     }
     var totalTasks = 12;
-    progressBarStyle.visibility = "visible";
+    progressBarStyle.visibility = true;
     return this.logReader.run(fetchFunc, [source])
       .then((data) => {resultData = data;
                        updateProgress(1, totalTasks);
@@ -109,11 +109,7 @@ app.factory('ResultsModel',function() {
       .then((subtests) => {updateProgress(11, totalTasks);
                           return lovefield.run("insertSubtestResults",[resultData, subtests, testRunData])})
       .then(() => {updateProgress(12, totalTasks);
-                  setTimeout(function() {
-                    progressBarStyle.visibility = "hidden";
-                    duplicates
-                  }, 100);
-                  });
+                   return duplicates});
   }
 
   /*
@@ -190,7 +186,7 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     "margin-right": "30%",
     "top": "60%",
     "position": "absolute",
-    "visibility": "hidden"
+    "visibility": false
   }
   $scope.resultsView = {
       limit: 50,
@@ -288,6 +284,13 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
 
   $scope.updateProgress = function updateProgress(current, total) {
     $scope.progressValue = Math.floor(current*100/total);
+    if (current == total) {
+      setTimeout(function() {
+        $scope.progressBarStyle.visibility = false;
+        $scope.$apply();
+        console.log("yolo");
+      }, 100);
+    }
     $scope.$apply();
   }
 

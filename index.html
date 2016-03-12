@@ -8,7 +8,7 @@
 
   <div ng-click="displayError.visible = false;" class="page">
   <h1>Test Results Viewer</h1>
-    <progress max="100" value="{{ progressValue }}" ng-style="progressBarStyle"> </progress>
+    <progress ng-show="progressBarStyle.visibility" max="100" value="{{ progressValue }}" ng-style="progressBarStyle"> </progress>
 
   <section>
     <h2>Log Files</h2>
