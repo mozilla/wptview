@@ -54,7 +54,7 @@ app.factory('ResultsModel',function() {
     this.logReader = new WorkerService("logcruncher.js");
   }
 
-  ResultsModel.prototype.addResultsFromLogs = function (source, runName, fetchFunc, updateProgress, progressBarStyle) {
+  ResultsModel.prototype.addResultsFromLogs = function (source, runName, fetchFunc, updateProgress, progressBar) {
     var lovefield = this.service;
     var resultData = null;
     var testData = null;
@@ -73,7 +73,7 @@ app.factory('ResultsModel',function() {
       };
     }
     var totalTasks = 12;
-    progressBarStyle.visibility = true;
+    progressBar.visibility = true;
     return this.logReader.run(fetchFunc, [source])
       .then((data) => {resultData = data;
                        updateProgress(1, totalTasks);
@@ -179,13 +179,7 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
       error: "",
       visible: false
   };
-  $scope.progressBarStyle = {
-    "width": "40%",
-    "height": "20px",
-    "margin-left": "30%",
-    "margin-right": "30%",
-    "top": "60%",
-    "position": "absolute",
+  $scope.progressBar = {
     "visibility": false
   }
   $scope.resultsView = {
@@ -219,7 +213,7 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
   }
 
   function addRun(source, name, type) {
-    return resultsModel.addResultsFromLogs(source, name, type, $scope.updateProgress, $scope.progressBarStyle)
+    return resultsModel.addResultsFromLogs(source, name, type, $scope.updateProgress, $scope.progressBar)
     .then((duplicates) => {return updateWarnings(duplicates)});
   }
 
@@ -286,9 +280,8 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     $scope.progressValue = Math.floor(current*100/total);
     if (current == total) {
       setTimeout(function() {
-        $scope.progressBarStyle.visibility = false;
+        $scope.progressBar.visibility = false;
         $scope.$apply();
-        console.log("yolo");
       }, 100);
     }
     $scope.$apply();

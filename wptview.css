@@ -47,17 +47,14 @@ h1 {
 }
 
 #progressBar {
-   width: 40%;
-   height: 20px;
-   margin-left: 30%;
-   margin-right: 30%;
-   top: 60%;
-   position: absolute;
-   border: 1px solid #ccc;
-   border-radius: 9px;
-   visibility: hidden;
+    width: 40%;
+    height: 20px;
+    margin-left: 30%;
+    margin-right: 30%;
+    top: 60%;
+    position: absolute;
  }
- 
+
 table {
     border-collapse: collapse;
 }
