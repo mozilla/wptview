@@ -54,7 +54,7 @@ app.factory('ResultsModel',function() {
     this.logReader = new WorkerService("logcruncher.js");
   }
 
-  ResultsModel.prototype.addResultsFromLogs = function (source, runName, fetchFunc) {
+  ResultsModel.prototype.addResultsFromLogs = function (source, runName, fetchFunc, updateProgress) {
     var lovefield = this.service;
     var resultData = null;
     var testData = null;
@@ -72,33 +72,43 @@ app.factory('ResultsModel',function() {
         "url": null
       };
     }
+    var totalTasks = 12;
     return this.logReader.run(fetchFunc, [source])
-      .then((data) => {resultData = data})
+      .then((data) => {resultData = data;
+                       updateProgress(1, totalTasks);
+                      })
       // Filling the test_runs table
-      .then(() => {return lovefield.run("selectParticularRun", [runName])})
-      .then((testRuns) => {return lovefield.run("insertTestRuns", [runType, runName, testRuns])})
+      .then(() => {updateProgress(2, totalTasks);
+                  return lovefield.run("selectParticularRun", [runName])})
+      .then((testRuns) => {updateProgress(3, totalTasks);
+                           return lovefield.run("insertTestRuns", [runType, runName, testRuns])})
       // Selecting current tests table, adding extra entries only
       .then((testRuns) => {testRunData = testRuns;
-                           return lovefield.run("selectAllParentTests")})
-      .then((parentTests) => {return lovefield.run("insertTests", [resultData, parentTests])})
-      .then((insertData) => {
-        duplicates = insertData[1];
-        return lovefield.run("selectAllParentTests")
-      })
+                           updateProgress(4, totalTasks);
+                          return lovefield.run("selectAllParentTests")})
+      .then((parentTests) => {updateProgress(5, totalTasks);
+                             return lovefield.run("insertTests", [resultData, parentTests])})
+      .then((insertData) => {updateProgress(6, totalTasks);
+                            duplicates = insertData[1];
+                            return lovefield.run("selectAllParentTests")})
       // populating results table with parent test results
       .then((tests) => {testData = tests;
-                        return lovefield.run("insertTestResults",
-                                             [resultData, testData, testRunData])})
+                        updateProgress(7, totalTasks);
+                        return lovefield.run("insertTestResults",[resultData, testData, testRunData])})
       // add subtests to tests table
-      .then(() => {return lovefield.run("selectAllSubtests")})
-      .then((subtests) => {return lovefield.run("insertSubtests",
+      .then(() => {updateProgress(8, totalTasks);
+                  return lovefield.run("selectAllSubtests")})
+      .then((subtests) => {updateProgress(9, totalTasks);
+                          return lovefield.run("insertSubtests",
                                                 [resultData, testData, subtests])})
-      .then((subtestData) => {duplicates = duplicates.concat(subtestData[1]);
-                              return lovefield.run("selectAllSubtests")})
+      .then((subtestData) => {updateProgress(10, totalTasks);
+                             duplicates = duplicates.concat(subtestData[1]);
+                             return lovefield.run("selectAllSubtests")})
       // adding subtest results
-      .then((subtests) => {return lovefield.run("insertSubtestResults",
-                                                [resultData, subtests, testRunData])})
-      .then(() => duplicates);
+      .then((subtests) => {updateProgress(11, totalTasks);
+                          return lovefield.run("insertSubtestResults",[resultData, subtests, testRunData])})
+      .then(() => {updateProgress(12, totalTasks);
+                   return duplicates});
   }
 
   /*
@@ -167,6 +177,9 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
       status: "",
       error: "",
       visible: false
+  };
+  $scope.progressBar = {
+    "visibility": false
   }
   $scope.resultsView = {
       limit: 50,
@@ -199,7 +212,9 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
   }
 
   function addRun(source, name, type) {
-    return resultsModel.addResultsFromLogs(source, name, type)
+    $scope.updateProgress(0,12);
+    $scope.progressBar.visibility = true;
+    return resultsModel.addResultsFromLogs(source, name, type, $scope.updateProgress)
     .then((duplicates) => {return updateWarnings(duplicates)});
   }
 
@@ -260,6 +275,17 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     $scope.$apply(function() {
       $scope.warnings = duplicates;
     })
+  }
+
+  $scope.updateProgress = function updateProgress(current, total) {
+    $scope.progressValue = Math.floor(current*100/total);
+    if (current == total) {
+      setTimeout(function() {
+        $scope.progressBar.visibility = false;
+        $scope.$apply();
+      }, 100);
+    }
+    $scope.$apply();
   }
 
   $scope.range = function(min, max, step) {
