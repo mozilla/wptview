@@ -117,7 +117,7 @@
         </form>
   </section>
 
-  <section id="results" ng-hide="busy || runs === null || !runs.length">
+  <section id="results" ng-hide="runs === null || !runs.length">
     <h2>Results</h2>
     <form>
       Show <input ng-model="resultsView.limit" type="number"> results. <button ng-click="fillTable(0)" ng-disabled="busy || runs === null || runs.length === 0">Load</button>
