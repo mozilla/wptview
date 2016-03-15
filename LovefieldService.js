@@ -485,83 +485,81 @@ LovefieldService.prototype.selectFilteredResults = function(filter, runs, minTes
 }
 
 LovefieldService.prototype.deleteEntries = function(run_id) {
-  return this.getDbConnection()
-      .then((db) => {
-        var comments = this.comments;
-        var test_results = this.test_results;
-        var q1 = db.select(comments.result_id.as("result_id"))
+  return this.getDbConnection().then((db) => {
+    var comments = this.comments;
+    var test_results = this.test_results;
+    var deleteCommentsQuery, rv;
+    if (run_id) {
+      deleteCommentsQuery = db.select(comments.result_id.as("result_id"))
+                            .from(comments)
+                            .innerJoin(test_results, test_results.result_id.eq(comments.result_id))
+                            .where(test_results.run_id.eq(run_id))
+                            .exec();
+    } else {
+      deleteCommentsQuery = db.select(test_results.result_id.as("result_id"))
+                            .from(test_results)
+                            .exec();
+    }
+    rv = deleteCommentsQuery
+      .then((ids) => {
+        result_ids = ids.map((id) => id.result_id);
+        return db.delete()
           .from(comments)
-          .innerJoin(test_results, test_results.result_id.eq(comments.result_id))
-          .where(test_results.run_id.eq(run_id));
-        var q2 = db.select(test_results.result_id.as("result_id"))
-          .from(test_results);
-
-        var tx = db.createTransaction();
-        var rv = tx.exec([run_id ? q1 : q2]);
-
-        rv = rv
-          .then((ids) => {
-            result_ids = [];
-            ids[0].forEach((id) => {
-                result_ids.push(id.result_id);
-            });
-            return db.delete()
-              .from(comments)
-              .where(comments.result_id.in(result_ids))
-              .exec();
-          });
-        return rv;
-      })
-      .then(() => {
-        var db = this.db_;
-        var test_results = this.test_results;
-        var tests = this.tests;
-        var test_runs = this.test_runs;
-        var q1 = db.delete().from(test_results);
-        var q2 = db.delete().from(test_runs);
-        if (run_id) {
-          q1 = q1.where(test_results.run_id.eq(run_id));
-          q2 = q2.where(test_runs.run_id.eq(run_id));
-        }
-        var queries = [q1, q2];
-        if (!run_id) {
-          queries.push(db.delete().from(tests));
-        }
-        var tx = db.createTransaction();
-        var rv = tx.exec(queries);
-        if (run_id) {
-          var keepIds = {};
-          rv = rv
-            .then(() => {
-              // Can't do a leftOuterJoin in a delete
-              // and doing
-              // SELECT id FROM tests
-              // LEFT OUTER JOIN test_results ON tests.id = test_results.test_id
-              // WHERE test_results.test_id = null
-              // returned all rows in tests, not just those with no matching row in test_results.
-              // So we select all the tests with a matching result in one query, all the tests
-              // in another query and take the difference in application code. This is silly.
-              return db.select(tests.id)
-                .from(tests)
-                .innerJoin(test_results, tests.id.eq(test_results.test_id))
-                .exec();
-            })
-            .then((ids) => {
-              ids.forEach((id) => keepIds[id] = true);
-              return db.select(tests.id)
-                .from(tests)
-                .exec();
-            })
-            .then((allIds) => {
-              var removeIds = allIds.filter((x) => !keepIds.hasOwnProperty(x));
-              return db.delete()
-                .from(tests)
-                .where(tests.id.in(removeIds))
-                .exec();
-            });
-        }
-        return rv;
+          .where(comments.result_id.in(result_ids))
+          .exec();
       });
+    return rv;
+  })
+  .then(() => {
+    var db = this.db_;
+    var test_results = this.test_results;
+    var tests = this.tests;
+    var test_runs = this.test_runs;
+    var q1 = db.delete().from(test_results);
+    var q2 = db.delete().from(test_runs);
+    if (run_id) {
+      q1 = q1.where(test_results.run_id.eq(run_id));
+      q2 = q2.where(test_runs.run_id.eq(run_id));
+    }
+    var queries = [q1, q2];
+    if (!run_id) {
+      queries.push(db.delete().from(tests));
+    }
+    var tx = db.createTransaction();
+    var rv = tx.exec(queries);
+    if (run_id) {
+      var keepIds = {};
+      rv = rv
+        .then(() => {
+          // Can't do a leftOuterJoin in a delete
+          // and doing
+          // SELECT id FROM tests
+          // LEFT OUTER JOIN test_results ON tests.id = test_results.test_id
+          // WHERE test_results.test_id = null
+          // returned all rows in tests, not just those with no matching row in test_results.
+          // So we select all the tests with a matching result in one query, all the tests
+          // in another query and take the difference in application code. This is silly.
+          return db.select(tests.id)
+            .from(tests)
+            .innerJoin(test_results, tests.id.eq(test_results.test_id))
+            .exec();
+        })
+        .then((ids) => {
+          ids.forEach((id) => keepIds[id] = true);
+          return db.select(tests.id)
+            .from(tests)
+            .exec();
+        })
+        .then((allIds) => {
+          var removeIds = allIds.filter((x) => !keepIds.hasOwnProperty(x));
+          return db.delete()
+            .from(tests)
+            .where(tests.id.in(removeIds))
+            .exec();
+        });
+    }
+    return rv;
+  });
 }
 
 LovefieldService.prototype.selectParticularRun = function(runName) {
