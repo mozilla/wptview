@@ -54,7 +54,7 @@ app.factory('ResultsModel',function() {
     this.logReader = new WorkerService("logcruncher.js");
   }
 
-  ResultsModel.prototype.addResultsFromLogs = function (source, runName, fetchFunc, updateProgress, progressBar) {
+  ResultsModel.prototype.addResultsFromLogs = function (source, runName, fetchFunc, updateProgress) {
     var lovefield = this.service;
     var resultData = null;
     var testData = null;
@@ -73,7 +73,6 @@ app.factory('ResultsModel',function() {
       };
     }
     var totalTasks = 12;
-    progressBar.visibility = true;
     return this.logReader.run(fetchFunc, [source])
       .then((data) => {resultData = data;
                        updateProgress(1, totalTasks);
@@ -213,7 +212,9 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
   }
 
   function addRun(source, name, type) {
-    return resultsModel.addResultsFromLogs(source, name, type, $scope.updateProgress, $scope.progressBar)
+    $scope.updateProgress(0,12);
+    $scope.progressBar.visibility = true;
+    return resultsModel.addResultsFromLogs(source, name, type, $scope.updateProgress)
     .then((duplicates) => {return updateWarnings(duplicates)});
   }
 
