@@ -151,14 +151,14 @@
   </p>
   </div>
   <div ng-if="displayError.visible" class="detailsPanel">
-    <div style="display: inline-block">
+    <div style="display: inline-block; max-width: 50%">
       <div><b>Test</b> : {{ displayError.test }}</div>
       <div><b>Subtest</b> : {{ displayError.subtest }}</div>
       <div><b>Expected</b> : <span class="{{ displayError.expected}}">{{ displayError.expected }}</span>
       <b>Got</b> : <span class="{{ displayError.status}}">{{ displayError.status }}</span></div>
       <div><p id="message"><b>Message</b> : {{ displayError.error }}</p></div>
     </div>
-    <div style="display: inline-block; vertical-align: top; margin-left: 20px;">
+    <div style="display: inline-block; vertical-align: top; margin-left: 20px; width: 45%">
         <b style="vertical-align: top">Comments :</b>
         <textarea ng-model="displayError.commentBox" ng-trim="false" cols="40" rows="3"
           ng-focus="startCommentSaveTrigger()"
