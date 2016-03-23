@@ -3,5 +3,7 @@ sudo: false
 
 script:
   - bin/test_travis.sh
-notifications:
-  email: false
+env:
+  global:
+  - GH_REF: github.com/mozilla/wptview.git
+  - secure: "<.... encrypted data from above ....>"
