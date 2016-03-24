@@ -1,14 +1,31 @@
-:root {
+body {
     font-family: "Fira Sans", "DejaVu Sans", "Bitstream Vera Sans", "Sans";
     font-size: 14px;
     padding: 0;
     margin: 0;
     background-color: #f8f8f8;
+    height: 100vh;
+}
+
+#wptview{
+    display: flex;
+    display: -webkit-flex;
+    flex-direction: column;
+    -webkit-flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
 }
 
 .page {
+    position: relative;
     display: inline-block;
-    width: 100%;
+    width: 97vw;
+    flex: 1;
+    -webkit-flex: auto;
+    overflow-y: auto;
+
+    padding-left: 1.5vw;
+    padding-right: 1.5vw;
 }
 
 h1 {
@@ -22,20 +39,16 @@ h1 {
 #message {
     font-family: "Fira Sans Mono", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", "Monospace";
 }
+
 .detailsPanel {
-    position: fixed;
-    bottom: 0px;
-    left: 0px;
+    position: relative;
     height: 15vh;
-    width: 100%;
     background-color: #FFFFFF;
     border-top: solid black;
     padding: 1%;
-}
 
-#wptview {
-    padding-left: 16px;
-    padding-right: 16px;
+    flex: none;
+    -webkit-flex: none;
 }
 
 #runsData {
