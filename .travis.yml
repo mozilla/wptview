@@ -6,4 +6,4 @@ script:
 env:
   global:
   - GH_REF: github.com/mozilla/wptview.git
-  - secure: "<.... encrypted data from above ....>"
+  - secure: "Vb+HqNxAyg989Le0kjMdoQC+trtmjyuUy5Sqa/tOdNwKEC11itzwF21gDU0RUQYtriiXHyGmzuVm2VG6iglEp/SHEcebJgZ35C8oHoZVuxQcP7afc6kAdM+2sgkxleTh3xSplbTWeW1R8wYTiN7c5bQs/FQuqY20RD2wN9HIo5T7iDOYnV+aPatcrtRhK3uahgYr1BNre10H8Jp0tAxvR7RTJEP5gKnQt62hhHkzmOCetRP1XMQgYHFKaxss0H7iJx8rSKq7kfPSbX5mJdjmzrxcj0p0m/gy3q6XUFdaFl0tPHu2y+armab972iGZiFBGNbrg8HQq+7pWk8S/+leStuX6iHi5mi/0red7XMrQKY+9u6t/a+ShZSxns+5xCunKSTCkGq1xdMYviErv5LQeB0EBiY7FS3nXgkk0a9VFM2mOc2AF5/7FaJr96ghpai32XSBSMYxo5hCobcSKVftX5LZ6jRXAODo0lwm5YNPg972PKSHaZchz8A/Sw+V8u3bxBSGwWVr94Yr4NrDNVybPQo72GTq/HGQnvlnM2+ZzL8rtf7jePQAlh9qKDoYdb2FdowSAE9SOx4K73P927nMt1sqnb49MEleWzphIod/2VRTXdK6OFqmilB7XeuI1wx6v4MlrPmEwu2G1rOgD+pNGRdJZ3immxUC3hS9gVVTe1o="
