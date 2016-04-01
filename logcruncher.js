@@ -19,7 +19,7 @@ function getLogType(logData) {
   var mozlogParser = () => parseMozlog(logData, testsFilter);
   try {
     parsed = JSON.parse(logData);
-  } catch(e) {
+  } catch (e) {
     return mozlogParser;
   }
   if (!parsed.hasOwnProperty("results")) {
@@ -84,8 +84,8 @@ function readURL(url) {
   return new Promise(function(resolve, reject) {
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
-      if (xhttp.readyState == 4) {
-        if (xhttp.status == 200) {
+      if (xhttp.readyState === 4) {
+        if (xhttp.status === 200) {
           resolve(xhttp.responseText);
         } else {
           reject("HTTP request failed!");
