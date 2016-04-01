@@ -1,5 +1,4 @@
 # wptview
-==================
 [![Build Status](https://travis-ci.org/mozilla/wptview.png?branch=master)](https://travis-ci.org/mozilla/wptview)
 
 
