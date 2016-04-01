@@ -1,4 +1,6 @@
-# wptview |ci-status|
+# wptview
+==================
+[![Build Status](https://travis-ci.org/mozilla/wptview.png?branch=master)](https://travis-ci.org/mozilla/wptview)
 Webapp for displaying the results of web-platform-tests.
 
 ## Running wptview
