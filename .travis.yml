@@ -4,11 +4,11 @@ sudo: false
 node_js:
   - "5.10.0"
 install:
-  - npm install eslint PrettyCSS
+  - npm install eslint csslint
 script:
   - bin/test_travis.sh
   - eslint *.js
-  - prettycss *.css
+  - csslint --format=compact *.css
 env:
   global:
   - GH_REF: github.com/mozilla/wptview.git
