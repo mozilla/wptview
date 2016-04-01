@@ -1,4 +1,4 @@
-# wptview
+# wptview |ci-status|
 Webapp for displaying the results of web-platform-tests.
 
 ## Running wptview
