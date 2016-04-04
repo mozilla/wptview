@@ -83,7 +83,7 @@ tbody > tr > td {
 }
 
 .details-legend {
-    margin-botom:5px;
+    margin-bottom:5px;
     cursor: pointer;
 }
 
@@ -92,7 +92,7 @@ tbody > tr > td {
 }
 
 #resultsTable > tbody > tr > td:first-child {
-    font-family: "Fira Sans Mono", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", "Monospace";
+    font-family: "Fira Sans Mono", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", Monospace;
     font-size: 10px;
     text-align:left;
 }

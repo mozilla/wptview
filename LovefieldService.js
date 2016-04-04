@@ -14,7 +14,7 @@ function LovefieldService() {
   this.test_runs = null;
   this.tests = null;
   this.test_results = null;
-};
+}
 
 /**
  * Initializes member variables that can't be initialized before getting a
@@ -34,7 +34,7 @@ LovefieldService.prototype.onConnected_ = function() {
  * @return {!IThenable<!lf.Database>}
  */
 LovefieldService.prototype.getDbConnection = function() {
-  if (this.db_ != null) {
+  if (this.db_ !== null) {
     return new Promise((resolve) => resolve(this.db_));
   }
   var connectOptions = {storeType: lf.schema.DataStoreType.INDEXED_DB};
@@ -104,7 +104,7 @@ LovefieldService.prototype.buildSchema_ = function() {
 var testLogsRaw;
 
 LovefieldService.prototype.insertTestRuns = function(runType, runName, testRuns) {
-  if (testRuns.length != 0) {
+  if (testRuns.length !== 0) {
     return new Promise(function(resolve, reject) {
       resolve(testRuns);
     });
@@ -121,7 +121,7 @@ LovefieldService.prototype.insertTestRuns = function(runType, runName, testRuns)
       into(test_runs).
       values(testRunRows);
   return q1.exec();
-}
+};
 
 LovefieldService.prototype.switchRuns = function(run_ids, enabled) {
   var test_runs = this.test_runs;
@@ -130,7 +130,7 @@ LovefieldService.prototype.switchRuns = function(run_ids, enabled) {
       set(test_runs.enabled, enabled).
       where(test_runs.run_id.in(run_ids));
   return q1.exec();
-}
+};
 
 
 LovefieldService.prototype.insertTests = function(testLogsRaw, currentTests) {
@@ -169,7 +169,7 @@ LovefieldService.prototype.insertTests = function(testLogsRaw, currentTests) {
       into(tests).
       values(testRows);
   return q1.exec().then((rows) => [rows, duplicates]);
-}
+};
 
 LovefieldService.prototype.insertTestResults = function(testLogsRaw, tests, testRuns) {
   // Let's first create a test to id mapping
@@ -206,7 +206,7 @@ LovefieldService.prototype.insertTestResults = function(testLogsRaw, tests, test
       into(test_results).
       values(testResultsRows);
   return q1.exec();
-}
+};
 
 LovefieldService.prototype.insertSubtests = function(testLogsRaw, tests, currentSubtests) {
   testIds = {};
@@ -255,7 +255,7 @@ LovefieldService.prototype.insertSubtests = function(testLogsRaw, tests, current
       into(tests).
       values(subtestRows);
   return q1.exec().then((rows) => [rows, duplicates]);
-}
+};
 
 LovefieldService.prototype.insertSubtestResults = function(testLogsRaw, subtests, testRuns) {
   subtestIds = {};
@@ -292,7 +292,7 @@ LovefieldService.prototype.insertSubtestResults = function(testLogsRaw, subtests
       into(test_results).
       values(subtestResultsRows);
   return q1.exec();
-}
+};
 
 LovefieldService.prototype.selectAllParentTests = function() {
   var tests = this.tests;
@@ -301,7 +301,7 @@ LovefieldService.prototype.selectAllParentTests = function() {
     from(tests).
     where(tests.parent_id.eq(null)).
     exec();
-}
+};
 
 LovefieldService.prototype.selectAllSubtests = function() {
   var tests = this.tests;
@@ -310,7 +310,7 @@ LovefieldService.prototype.selectAllSubtests = function() {
     from(tests).
     where(tests.parent_id.neq(null)).
     exec();
-}
+};
 
 LovefieldService.prototype.selectFilteredResults = function(filter, runs, minTestId, maxTestId, limit) {
   var lovefield = this;
@@ -326,7 +326,7 @@ LovefieldService.prototype.selectFilteredResults = function(filter, runs, minTes
 
   var joinRuns = {};
   filter.statusFilter.forEach((x) => {
-    if (x.run == "ALL") {
+    if (x.run === "ALL") {
       runs.forEach((run) => {
         if (run.enabled) {
           joinRuns[run.name] = 1;
@@ -377,7 +377,7 @@ LovefieldService.prototype.selectFilteredResults = function(filter, runs, minTes
     var runConditions = [];
     var op = constraint.equality === "is" ? "eq" : "neq";
     var booleanOp = constraint.equality === "is" ? "or" : "and";
-    if (constraint.run == "ALL") {
+    if (constraint.run === "ALL") {
       runs.forEach((run) => {
         if (run.enabled) {
           runConditions = constraint.targets.map((x) => aliases[run.name].resultAlias.status[op](x));
@@ -399,13 +399,13 @@ LovefieldService.prototype.selectFilteredResults = function(filter, runs, minTes
   var pathOrConditions = {
     include: [],
     exclude: []
-  }
+  };
   filter.pathFilter.forEach((pathFilter) => {
     pathFilter.path = pathFilter.path.replace("\\", "/");
     var path_regex = escapeRegExp(pathFilter.path);
     var choice = pathFilter.choice.split(":");
     if (choice[1] === "start") {
-      if (pathFilter.path.charAt(0) != "/") {
+      if (pathFilter.path.charAt(0) !== "/") {
         path_regex = escapeRegExp("/" + pathFilter.path);
       }
       path_regex = "^" + path_regex;
@@ -429,9 +429,9 @@ LovefieldService.prototype.selectFilteredResults = function(filter, runs, minTes
 
   // Working test type filter
   if (filter.testTypeFilter.type === "parent") {
-      whereConditions.push(tests.parent_id.eq(null));
+    whereConditions.push(tests.parent_id.eq(null));
   } else if (filter.testTypeFilter.type === "child") {
-      whereConditions.push(tests.parent_id.neq(null));
+    whereConditions.push(tests.parent_id.neq(null));
   }
 
   orderByDir = lf.Order.ASC;
@@ -482,7 +482,7 @@ LovefieldService.prototype.selectFilteredResults = function(filter, runs, minTes
       .orderBy(test_runs.run_id)
       .exec();
   });
-}
+};
 
 LovefieldService.prototype.deleteEntries = function(run_id) {
   return this.getDbConnection().then((db) => {
@@ -545,7 +545,7 @@ LovefieldService.prototype.deleteEntries = function(run_id) {
             .exec();
         })
         .then((ids) => {
-          ids.forEach((id) => keepIds[id] = true);
+          ids.forEach((id) => {keepIds[id] = true;});
           return db.select(tests.id)
             .from(tests)
             .exec();
@@ -560,7 +560,7 @@ LovefieldService.prototype.deleteEntries = function(run_id) {
     }
     return rv;
   });
-}
+};
 
 LovefieldService.prototype.selectParticularRun = function(runName) {
   var test_runs = this.test_runs;
@@ -572,7 +572,7 @@ LovefieldService.prototype.selectParticularRun = function(runName) {
         .where(test_runs.name.eq(runName))
         .exec();
     });
-}
+};
 
 LovefieldService.prototype.getRunURLs = function() {
   var test_runs = this.test_runs;
@@ -581,7 +581,7 @@ LovefieldService.prototype.getRunURLs = function() {
     from(test_runs).
     where(test_runs.url.neq(null)).
     exec();
-}
+};
 
 LovefieldService.prototype.getRuns = function() {
   var db = null;
@@ -598,19 +598,19 @@ LovefieldService.prototype.getRuns = function() {
         .from(test_runs)
         .innerJoin(test_results, test_results.run_id.eq(test_runs.run_id))
         .groupBy(test_runs.run_id)
-        .exec()
+        .exec();
     })
     .then((count_data) => {
       // Lovefield doesn't allow us to grab all the data from test_runs and the counts
       // in a single query
-      count_data.forEach((x) => counts[x.test_runs.run_id] = x.count);
-      return db.select().from(test_runs).exec()
+      count_data.forEach((x) => {counts[x.test_runs.run_id] = x.count;});
+      return db.select().from(test_runs).exec();
     })
     .then((data) => {
-      data.forEach((x) => x.count = counts[x.run_id]);
+      data.forEach((x) => {x.count = counts[x.run_id];});
       return data;
     });
-}
+};
 
 LovefieldService.prototype.selectComment = function(result_id) {
   var comments = this.comments;
@@ -618,7 +618,7 @@ LovefieldService.prototype.selectComment = function(result_id) {
     from(comments).
     where(comments.result_id.eq(result_id)).
     exec();
-}
+};
 
 LovefieldService.prototype.insertComment = function(result_id, comment) {
   var comments = this.comments;
@@ -626,7 +626,7 @@ LovefieldService.prototype.insertComment = function(result_id, comment) {
     into(comments).
     values([comments.createRow({'result_id':result_id, 'comment': comment})]).
     exec();
-}
+};
 
 LovefieldService.prototype.updateComment = function(result_id, comment) {
   var comments = this.comments;
@@ -634,7 +634,7 @@ LovefieldService.prototype.updateComment = function(result_id, comment) {
     set(comments.comment, comment).
     where(comments.result_id.eq(result_id)).
     exec();
-}
+};
 
 LovefieldService.prototype.deleteComment = function(result_id) {
   var comments = this.comments;
@@ -642,4 +642,4 @@ LovefieldService.prototype.deleteComment = function(result_id) {
     from(comments).
     where(comments.result_id.eq(result_id)).
     exec();
-}
+};

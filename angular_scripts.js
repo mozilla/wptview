@@ -12,14 +12,14 @@ app.directive('customOnChange', function() {
 
 app.filter('arrFilter', function() {
   return function(collection, currentRun) {
-    return collection.filter((item) => currentRun != item.name && currentRun != "ALL" && item.enabled);
-  }
+    return collection.filter((item) => currentRun !== item.name && currentRun !== "ALL" && item.enabled);
+  };
 });
 
 app.filter('enabledFilter', function() {
   return function(collection) {
     return collection.filter((item) => item.enabled);
-  }
+  };
 });
 
 function WorkerService(workerScript) {
@@ -46,13 +46,13 @@ WorkerService.prototype.run = function(command, data) {
   return new Promise((resolve) => {
     this.resolvers[msg[0]] = resolve;
   });
-}
+};
 
 app.factory('ResultsModel',function() {
   var ResultsModel = function() {
     this.service = new WorkerService("LovefieldService.js");
     this.logReader = new WorkerService("logcruncher.js");
-  }
+  };
 
   ResultsModel.prototype.addResultsFromLogs = function (source, runName, fetchFunc, updateProgress) {
     var lovefield = this.service;
@@ -74,42 +74,65 @@ app.factory('ResultsModel',function() {
     }
     var totalTasks = 12;
     return this.logReader.run(fetchFunc, [source])
-      .then((data) => {resultData = data;
-                       updateProgress(1, totalTasks);
-                      })
+      .then((data) => {
+        resultData = data;
+        updateProgress(1, totalTasks);
+      })
       // Filling the test_runs table
-      .then(() => {updateProgress(2, totalTasks);
-                  return lovefield.run("selectParticularRun", [runName])})
-      .then((testRuns) => {updateProgress(3, totalTasks);
-                           return lovefield.run("insertTestRuns", [runType, runName, testRuns])})
+      .then(() => {
+        updateProgress(2, totalTasks);
+        return lovefield.run("selectParticularRun", [runName]);
+      })
+      .then((testRuns) => {
+        updateProgress(3, totalTasks);
+        return lovefield.run("insertTestRuns", [runType, runName, testRuns]);
+      })
       // Selecting current tests table, adding extra entries only
-      .then((testRuns) => {testRunData = testRuns;
-                           updateProgress(4, totalTasks);
-                          return lovefield.run("selectAllParentTests")})
-      .then((parentTests) => {updateProgress(5, totalTasks);
-                             return lovefield.run("insertTests", [resultData, parentTests])})
-      .then((insertData) => {updateProgress(6, totalTasks);
-                            duplicates = insertData[1];
-                            return lovefield.run("selectAllParentTests")})
+      .then((testRuns) => {
+        testRunData = testRuns;
+        updateProgress(4, totalTasks);
+        return lovefield.run("selectAllParentTests");
+      })
+      .then((parentTests) => {
+        updateProgress(5, totalTasks);
+        return lovefield.run("insertTests", [resultData, parentTests]);
+      })
+      .then((insertData) => {
+        updateProgress(6, totalTasks);
+        duplicates = insertData[1];
+        return lovefield.run("selectAllParentTests");
+      })
       // populating results table with parent test results
-      .then((tests) => {testData = tests;
-                        updateProgress(7, totalTasks);
-                        return lovefield.run("insertTestResults",[resultData, testData, testRunData])})
+      .then((tests) => {
+        testData = tests;
+        updateProgress(7, totalTasks);
+        return lovefield.run("insertTestResults",[resultData, testData, testRunData]);
+      })
       // add subtests to tests table
-      .then(() => {updateProgress(8, totalTasks);
-                  return lovefield.run("selectAllSubtests")})
-      .then((subtests) => {updateProgress(9, totalTasks);
-                          return lovefield.run("insertSubtests",
-                                                [resultData, testData, subtests])})
-      .then((subtestData) => {updateProgress(10, totalTasks);
-                             duplicates = duplicates.concat(subtestData[1]);
-                             return lovefield.run("selectAllSubtests")})
+      .then(() => {
+        updateProgress(8, totalTasks);
+        return lovefield.run("selectAllSubtests");
+      })
+      .then((subtests) => {
+        updateProgress(9, totalTasks);
+        return lovefield.run("insertSubtests",
+          [resultData, testData, subtests]);
+      })
+      .then((subtestData) => {
+        updateProgress(10, totalTasks);
+        duplicates = duplicates.concat(subtestData[1]);
+        return lovefield.run("selectAllSubtests");
+      })
       // adding subtest results
-      .then((subtests) => {updateProgress(11, totalTasks);
-                          return lovefield.run("insertSubtestResults",[resultData, subtests, testRunData])})
-      .then(() => {updateProgress(12, totalTasks);
-                   return duplicates});
-  }
+      .then((subtests) => {
+        updateProgress(11, totalTasks);
+        return lovefield.run("insertSubtestResults",[resultData, subtests, testRunData]);
+      })
+      .then(() => {
+        updateProgress(12, totalTasks);
+        return duplicates;
+      });
+  };
 
   /*
     Load the results of a specified number of tests, ordered by test id, either taking all
@@ -130,11 +153,11 @@ app.factory('ResultsModel',function() {
   ResultsModel.prototype.getResults = function(filter, runs, minTestId, maxTestId, limit) {
     return this.service.run("selectFilteredResults",
                             [filter, runs, minTestId, maxTestId, limit]);
-  }
+  };
 
   ResultsModel.prototype.getComment = function(result_id) {
     return this.service.run("selectComment", [result_id]);
-  }
+  };
 
   ResultsModel.prototype.saveComment = function(result_id, comment, update) {
     if (update) {
@@ -142,23 +165,23 @@ app.factory('ResultsModel',function() {
     } else {
       return this.service.run("insertComment", [result_id, comment]);
     }
-  }
+  };
 
   ResultsModel.prototype.deleteComment = function(result_id) {
     return this.service.run("deleteComment", [result_id]);
-  }
+  };
 
   ResultsModel.prototype.removeResults = function(run_id) {
     return this.service.run("deleteEntries", [run_id]);
-  }
+  };
 
   ResultsModel.prototype.getRuns = function() {
     return this.service.run("getRuns");
-  }
+  };
 
   ResultsModel.prototype.getRunURLs = function() {
     return this.service.run("getRunURLs");
-  }
+  };
 
   return ResultsModel;
 });
@@ -171,38 +194,40 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
   $scope.runs = null;
   $scope.upload = {};
   $scope.displayError = {
-      test: "",
-      subtest: "",
-      expected: "",
-      status: "",
-      error: "",
-      visible: false
+    test: "",
+    subtest: "",
+    expected: "",
+    status: "",
+    error: "",
+    visible: false
   };
   $scope.progressBar = {
     "visibility": false
-  }
+  };
   $scope.resultsView = {
-      limit: 50,
-      firstPage: true,
-      lastPage: false,
-      minTestId: null,
-      maxTestId: null,
-      firstTestId: null
-  }
+    limit: 50,
+    firstPage: true,
+    lastPage: false,
+    minTestId: null,
+    maxTestId: null,
+    firstTestId: null
+  };
   $scope.filter = {
     "statusFilter": [],
     "pathFilter": [],
     "testTypeFilter": {
       type:"both"
     }
-  }
+  };
   var runIndex = {};
   var resultsModel = new ResultsModel();
 
   function updateRuns() {
     var runs;
     return resultsModel.getRuns()
-      .then((runsData) => runs = runsData)
+      .then((runsData) => {
+        runs = runsData;
+      })
       .then(() => {
         $scope.runs = runs;
         $scope.runs.forEach((run, i) => {
@@ -215,7 +240,7 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     $scope.updateProgress(0,12);
     $scope.progressBar.visibility = true;
     return resultsModel.addResultsFromLogs(source, name, type, $scope.updateProgress)
-    .then((duplicates) => {return updateWarnings(duplicates)});
+    .then((duplicates) => {return updateWarnings(duplicates);});
   }
 
   function getRunURLs() {
@@ -235,7 +260,7 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     });
     run_strings.forEach((run) => {
       var parameters = run.split(",");
-      if (urls.indexOf(parameters[0]) == -1) {
+      if (urls.indexOf(parameters[0]) === -1) {
         if (run_names.hasOwnProperty(parameters[1])) {
           var original_name = parameters[1];
           while (run_names.hasOwnProperty(parameters[1])) {
@@ -257,7 +282,7 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     }
     var add_runs = runs.map((run) => addRun(run.url, run.name, "readURL"));
     return resultsModel.switchRuns(disabledRuns, false)
-      .then(() => {return Promise.all(add_runs)});
+      .then(() => {return Promise.all(add_runs);});
   }
 
   // first updateRuns() helps initialize the database
@@ -274,36 +299,36 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
   function updateWarnings(duplicates) {
     $scope.$apply(function() {
       $scope.warnings = duplicates;
-    })
+    });
   }
 
   $scope.updateProgress = function updateProgress(current, total) {
     $scope.progressValue = Math.floor(current*100/total);
-    if (current == total) {
+    if (current === total) {
       setTimeout(function() {
         $scope.progressBar.visibility = false;
         $scope.$apply();
       }, 100);
     }
     $scope.$apply();
-  }
+  };
 
   $scope.range = function(min, max, step) {
-      step = step || 1;
-      var input = [];
-      for (var i = min; i < max; i += step) {
-          input.push(i);
-      }
-      return input;
+    step = step || 1;
+    var input = [];
+    for (var i = min; i < max; i += step) {
+      input.push(i);
+    }
+    return input;
   };
 
   $scope.fetchLog = function () {
-     if ($scope.upload.logSrc == 'file') {
-         $scope.uploadFile();
-     } else if ($scope.upload.logSrc == 'url') {
-         $scope.fetchFromUrl();
-     }
-  }
+    if ($scope.upload.logSrc === 'file') {
+      $scope.uploadFile();
+    } else if ($scope.upload.logSrc === 'url') {
+      $scope.fetchFromUrl();
+    }
+  };
 
   $scope.uploadFile = function () {
     $scope.busy = true;
@@ -317,7 +342,7 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
       $scope.busy = false;
       $scope.$apply();
     });
-  }
+  };
 
   $scope.fetchFromUrl = function () {
     $scope.busy = true;
@@ -328,7 +353,7 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
       $scope.busy = false;
       $scope.$apply();
     });
-  }
+  };
 
   $scope.switchRun = function(run) {
     $scope.busy = true;
@@ -338,20 +363,20 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
       $scope.results = null;
       $scope.$apply();
     });
-  }
+  };
 
   $scope.clearTable = function(run_id) {
     $scope.busy = true;
     resultsModel.removeResults(run_id)
       .then(() => {
         $scope.results = null;
-        $scope.warnings = []})
+        $scope.warnings = [];})
     .then(updateRuns)
     .then(() => {
       $scope.busy = false;
       $scope.$apply();
     });
-  }
+  };
 
   $scope.export = function() {
     $scope.busy = true;
@@ -372,7 +397,7 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
       $scope.busy = false;
       $scope.$apply();
     });
-  }
+  };
 
   // http://jsfiddle.net/koldev/cw7w5/
   function saveData(data, fileName) {
@@ -380,8 +405,8 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     document.body.appendChild(a);
     a.style = "display: none";
     var json = JSON.stringify(data),
-        blob = new Blob([json], {type: "octet/stream"}),
-        url = window.URL.createObjectURL(blob);
+      blob = new Blob([json], {type: "octet/stream"}),
+      url = window.URL.createObjectURL(blob);
     a.href = url;
     a.download = fileName;
     a.click();
@@ -419,13 +444,13 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
         $scope.busy = false;
         $scope.$apply();
       });
-  }
+  };
 
   $scope.newFile = function(evt) {
     $scope.isFileEmpty = false;
     $scope.fileEvent = evt;
     $scope.$apply();
-  }
+  };
 
   $scope.addConstraint = function() {
     $scope.filter.statusFilter.push({
@@ -433,34 +458,34 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
       equality : "is",
       status : ["PASS"]
     });
-  }
+  };
 
   $scope.deleteConstraint = function() {
     $scope.filter.statusFilter.pop();
-  }
+  };
 
   $scope.addOrConstraint = function(index) {
     $scope.filter.statusFilter[index].status.push("PASS");
-  }
+  };
 
   $scope.deleteOrConstraint = function(index) {
     $scope.filter.statusFilter[index].status.pop();
-  }
+  };
 
   $scope.addPath = function() {
     $scope.filter.pathFilter.push({
       choice: "include:start",
       path: ""
     });
-  }
+  };
 
   $scope.deletePath = function() {
     $scope.filter.pathFilter.pop();
-  }
+  };
 
   $scope.warning_message = function() {
     return $scope.warnings.length + " warnings found.";
-  }
+  };
 
   $scope.showError = function(runResult, resultTest) {
     saveComment();
@@ -483,11 +508,11 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
         $scope.busy = false;
         $scope.$apply();
       });
-  }
+  };
 
   $scope.startCommentSaveTrigger = function() {
     $scope.displayError.commentSaveTrigger = $interval(saveComment, 5000);
-  }
+  };
 
   $scope.stopCommentSaveTrigger = function() {
     saveComment();
@@ -497,14 +522,14 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
       $interval.cancel($scope.displayError.commentSaveTrigger);
       $scope.displayError.commentSaveTrigger = undefined;
     }
-  }
+  };
 
   function saveComment() {
     var comment = $scope.displayError.comment;
     var commentNew = $scope.displayError.commentBox;
     var resultId = $scope.displayError.result_id;
     if ($scope.displayError.visible && comment !== commentNew) {
-      if (commentNew == "") {
+      if (commentNew === "") {
         resultsModel.deleteComment(resultId);
       } else {
         resultsModel.saveComment(resultId, commentNew, comment !== "");
