@@ -178,8 +178,6 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   };
 
   $scope.fetchLog = function () {
-
-
      if ($scope.upload.logSrc == 'file') {
          $scope.uploadFile();
      } else if ($scope.upload.logSrc == 'url') {
@@ -205,45 +203,16 @@ app.controller('wptviewController', function($scope, ResultsModel) {
   
 
   $scope.runNameTest = function () {
-
     $scope.match = false;
-    var oTable = document.getElementById('runsTable');
     $scope.runs.forEach((run) => {
-      if ($scope.upload.runName===run.name){
-        $scope.match=1;
-        document.getElementById("runT").style.borderColor = "red";
+      if ($scope.upload.runName === run.name) {
+        $scope.match = true;
+        document.getElementById("runTest").style.borderColor = "red";
         document.getElementById("errorT").value = "Run Names must be unique! Please try another run name!";
       }
-      else {
-        document.getElementById("runT").style.borderColor = "white";
+        document.getElementById("runTest").style.borderColor = "white";
         document.getElementById("errorT").value = ""
-    }
     })
-    
-
-  
-   /*
-    if (x=== "abcd") $scope.match= true;
-    var rowLength = oTable.rows.length;
-     //loops through rows    
-    for (i = 0; i < rowLength; i++){
-
-      //gets cells of current row  
-       var oCells = oTable.rows.item(i).cells;
-
-      //gets amount of cells of current row
-       var cellLength = oCells.length; 
-       var cellVal = oCells.item(0).innerHTML;
-              //alert(cellVal);
-       if (cellVal === $scope.upload.runName) {
-        $scope.match = 1;
-
-        //alert("Try Another Run Name.");
-        break;
-      }
-           
-    }
-*/
 
   }
 
