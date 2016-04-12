@@ -344,6 +344,23 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     });
   };
 
+
+
+  $scope.runNameTest = function () {
+    $scope.match = false;
+    $scope.runs.forEach((run) => {
+      if ($scope.upload.runName === run.name) {
+        $scope.match = true;
+        document.getElementById("runTest").style.borderColor = "red";
+        document.getElementById("errorT").value = "Run Names must be unique! Please try another run name!";
+      }
+        document.getElementById("runTest").style.borderColor = "white";
+        document.getElementById("errorT").value = ""
+    })
+
+  }
+
+
   $scope.fetchFromUrl = function () {
     $scope.busy = true;
     addRun($scope.upload.logUrl, $scope.upload.runName, "readURL")
@@ -540,7 +557,7 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
 
   function organizeResults(results) {
     var testMap = {};
-    results.forEach(function(result) {
+      results.forEach(function(result) {
       if (result.title === undefined) {
         result.title = "";
       }
