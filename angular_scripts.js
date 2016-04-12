@@ -200,7 +200,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
     });
   }
 
-  
+
 
   $scope.runNameTest = function () {
     $scope.match = false;
@@ -354,7 +354,7 @@ app.controller('wptviewController', function($scope, ResultsModel) {
 
   function organizeResults(results) {
     var testMap = {};
-    results.forEach(function(result) {
+      results.forEach(function(result) {
       if (result.title === undefined) {
         result.title = "";
       }
