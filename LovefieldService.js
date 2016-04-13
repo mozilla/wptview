@@ -140,7 +140,7 @@ LovefieldService.prototype.editRunName = function(run_id, newRunName) {
       set(test_runs.name, newRunName).
       where(lf.op.and(test_runs.run_id.eq(run_id)));
   return q1.exec();
-}
+};
 
 LovefieldService.prototype.insertTests = function(testLogsRaw, currentTests) {
   var testRows = [];
