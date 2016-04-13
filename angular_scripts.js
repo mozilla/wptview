@@ -376,14 +376,14 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
       var runs = [];
       var names = [];
       var runsTable = document.getElementById("runsTable");
-      var nameCell = runsTable.rows[rowNo+1].cells[1];
+      var nameCell = runsTable.rows[rowNo + 1].cells[2];
       var prevName = nameCell.innerHTML;
       var edit_images = document.getElementsByName("edit");
-      nameCell.innerHTML='<input type="text" id="currentEdit">';
+      nameCell.innerHTML= '<input type="text" id="currentEdit">';
       document.onkeydown = function(evt) {
         evt = evt || window.event;
         //Enter key to confirm name
-        if (evt.keyCode == 13 && $scope.editSelected) {          
+        if (evt.keyCode == 13 && $scope.editSelected) {
           var curName = document.getElementById("currentEdit").value;
           if(!(curName === null || curName.match(/^\s*$/) !== null)) {
             return resultsModel.getRuns()
@@ -415,8 +415,8 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
           $scope.editSelected = false;
         }
       };
-    } 
-  }  
+    }
+  }
 
   $scope.clearTable = function(run_id) {
     $scope.busy = true;
