@@ -53,7 +53,7 @@
               <input name="log_url" type="url" id="log_url" ng-model="upload.logUrl" placeholder="URL" ng-disabled="busy || upload.logSrc != 'url'"/>
               <br><br>
             <input name="run" type="text" ng-model="upload.runName" required ng-disabled="busy" placeholder="Run name">
-            <button ng-click="fetchLog()" ng-disabled="busy || (upload.logSrc == 'file' && isFileEmpty) || (upload.logSrc == 'url' && !upload.logUrl) || !upload.runName " for="fileInput">Import Log</button>
+            <button ng-click="fetchLog()" ng-disabled="busy || (upload.logSrc == 'file' && isFileEmpty) || (upload.logSrc == 'url' && !upload.logUrl) || !upload.runName  || !fileEvent.target.value" for="fileInput">Import Log</button>
           </form>
         </div>
       </div>
