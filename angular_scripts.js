@@ -310,7 +310,9 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
         $scope.$apply();
       }, 100);
     }
-    $scope.$apply();
+    if (current > 0) {
+      $scope.$apply();
+    }
   };
 
   $scope.range = function(min, max, step) {
