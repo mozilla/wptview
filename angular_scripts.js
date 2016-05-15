@@ -325,6 +325,8 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
   $scope.fetchLog = function () {
     if ($scope.upload.logSrc === 'file') {
       $scope.uploadFile();
+      // Clears target for "Upload File" after import is complete. 
+      $scope.fileEvent.target.value = null;
     } else if ($scope.upload.logSrc === 'url') {
       $scope.fetchFromUrl();
     }
