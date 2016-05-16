@@ -310,7 +310,9 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
         $scope.$apply();
       }, 100);
     }
-    $scope.$apply();
+    if (current > 0) {
+      $scope.$apply();
+    }
   };
 
   $scope.range = function(min, max, step) {
@@ -323,19 +325,19 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
   };
 
   $scope.fetchLog = function () {
-    if ($scope.upload.logSrc === 'file') {
-      var run_names = [];
-      $scope.runs.forEach((run) => {
-        run_names.push(run.name);
-      });
-      //Check if run having same run_name exists
-      if ( run_names.indexOf($scope.upload.runName) !== -1 ) {
-        console.log("A run with name ",$scope.upload.runName," already exists.");
-      } else {
+    var run_names = [];
+    $scope.runs.forEach((run) => {
+      run_names.push(run.name);
+    });
+    //Check if run having same run_name exists
+    if (run_names.indexOf($scope.upload.runName) !== -1) {
+      console.log("A run with name " + $scope.upload.runName + " already exists.");
+    } else {
+      if ($scope.upload.logSrc === 'file') {
         $scope.uploadFile();
+      } else if ($scope.upload.logSrc === 'url') {
+        $scope.fetchFromUrl();
       }
-    } else if ($scope.upload.logSrc === 'url') {
-      $scope.fetchFromUrl();
     }
   };
 
@@ -348,6 +350,8 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     .then(() => {
       $scope.isFileEmpty = true;
       $scope.upload.runName = "";
+      // Clears target for "Upload File" after import is complete.
+      $scope.fileEvent.target.value = null;
       $scope.busy = false;
       $scope.$apply();
     });
