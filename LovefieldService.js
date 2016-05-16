@@ -350,14 +350,7 @@ LovefieldService.prototype.selectFilteredResults = function(filter, runs, minTes
       }
     });
   });
-  // Account for the case where no status filters exist
-  if (filter.statusFilter.length === 0) {
-    runs.forEach((run) => {
-      if (run.enabled) {
-        joinRuns[run.name] = 1;
-      }
-    });
-  }
+
   // JOINs with results and runs table
   var aliases = {};
   Object.keys(joinRuns).forEach((run) => {
@@ -394,6 +387,21 @@ LovefieldService.prototype.selectFilteredResults = function(filter, runs, minTes
       whereConditions.push(condition);
     }
   });
+
+  // Account for the case where no status filters exist
+  // This is slightly hacky and we need to find a proper solution here.
+  if (filter.statusFilter.length === 0) {
+    query = query.innerJoin(test_results, tests.id.eq(test_results.test_id));
+    query = query.innerJoin(test_runs, test_results.run_id.eq(test_runs.run_id));
+    var possibleRuns = [];
+    runs.forEach((run) => {
+      if (run.enabled) {
+        possibleRuns.push(test_runs.name.eq(run.name));
+      }
+    });
+    var condition = lf.op.or.apply(lf.op.or, possibleRuns);
+    whereConditions.push(condition);
+  }
 
   // working on path filter
   var pathOrConditions = {
