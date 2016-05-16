@@ -341,6 +341,8 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     .then(() => {
       $scope.isFileEmpty = true;
       $scope.upload.runName = "";
+      // Clears target for "Upload File" after import is complete.
+      $scope.fileEvent.target.value = null;
       $scope.busy = false;
       $scope.$apply();
     });
