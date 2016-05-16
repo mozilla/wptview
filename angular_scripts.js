@@ -324,7 +324,16 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
 
   $scope.fetchLog = function () {
     if ($scope.upload.logSrc === 'file') {
-      $scope.uploadFile();
+      var run_names = [];
+      $scope.runs.forEach((run) => {
+        run_names.push(run.name);
+      });
+      //Check if run having same run_name exists
+      if ( run_names.indexOf($scope.upload.runName) !== -1 ) {
+        console.log("A run with name ",$scope.upload.runName," already exists.");
+      } else {
+        $scope.uploadFile();
+      }
     } else if ($scope.upload.logSrc === 'url') {
       $scope.fetchFromUrl();
     }
