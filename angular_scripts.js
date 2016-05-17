@@ -350,7 +350,6 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     addRun(file, $scope.upload.runName, "read")
     .then(updateRuns)
     .then(() => {
-      $scope.isFileEmpty = true;
       $scope.upload.runName = "";
       // Clears target for "Upload File" after import is complete.
       $scope.fileEvent.target.value = null;
@@ -462,7 +461,6 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
   };
 
   $scope.newFile = function(evt) {
-    $scope.isFileEmpty = false;
     $scope.fileEvent = evt;
     $scope.$apply();
   };
