@@ -324,6 +324,17 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     return input;
   };
 
+  $scope.duplicate_run_name = function() {
+    var run_names = $scope.runs.map((run) => run.name);
+    //Check if run having same run_name exists
+    if (run_names.indexOf($scope.upload.runName) !== -1) {
+      console.log("A run with name " + $scope.upload.runName + " already exists.");
+      return true;
+    } else {
+      return false;
+    }
+  };
+
   $scope.fetchLog = function () {
     if ($scope.upload.logSrc === 'file') {
       $scope.uploadFile();
