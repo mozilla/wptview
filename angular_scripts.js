@@ -183,6 +183,10 @@ app.factory('ResultsModel',function() {
     return this.service.run("getRunURLs");
   };
 
+  ResultsModel.prototype.editRunName = function(run_id, newRunName) {
+    return this.service.run("editRunName", [run_id, newRunName]);
+  };
+
   return ResultsModel;
 });
 
@@ -190,6 +194,7 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
   $scope.results = null;
   $scope.warnings = [];
   $scope.showImport = false;
+  $scope.editSelected = false;
   $scope.busy = true;
   $scope.runs = null;
   $scope.upload = {};
@@ -232,6 +237,9 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
         $scope.runs = runs;
         $scope.runs.forEach((run, i) => {
           runIndex[run.run_id] = i;
+          run.edit = false;
+          run.editColor = "";
+          run.newName = "";
         });
       });
   }
@@ -377,6 +385,45 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
       $scope.results = null;
       $scope.$apply();
     });
+  };
+
+  $scope.editName = function(index) {
+    if (!$scope.editSelected) {
+      $scope.editSelected = true;
+      $scope.runs[index].edit = true;
+      document.onkeydown = function(evt) {
+        evt = evt || window.event;
+        //Enter key to confirm name
+        if (evt.keyCode === 13 && $scope.editSelected) {
+          var curName = $scope.runs[index].newName;
+          if (!(curName === null || curName.match(/^\s*$/) !== null)) {
+            var runNames = $scope.runs.map((run) => run.name);
+            if (runNames.indexOf(curName) === -1) {
+              resultsModel.editRunName($scope.runs[index].run_id, curName)
+              .then(() => {
+                updateRuns()
+                .then(() => {
+                  $scope.runs[index].edit = false;
+                  $scope.editSelected = false;
+                  $scope.$apply();
+                });
+              });
+            } else {
+              console.log("Name already exists in DB");
+              $scope.runs[index].editColor = "red";
+            }
+          } else {
+            $scope.runs[index].editColor = "red";
+          }
+        }
+        //Escape key to exit edit mode
+        else if (evt.keyCode === 27 && $scope.editSelected) {
+          $scope.runs[index].edit = false;
+          $scope.editSelected = false;
+        }
+        $scope.$apply();
+      };
+    }
   };
 
   $scope.clearTable = function(run_id) {

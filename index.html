@@ -20,13 +20,15 @@
         <table id="runsTable">
           <tr>
             <th></th>
+            <th></th>
             <th>Run Name</th>
             <th>Results Loaded</th>
             <th></th>
           </tr>
           <tr ng-repeat="run in runs">
             <td><input type="checkbox" ng-model="run.enabled" ng-change="switchRun(run)" ng-disabled="busy"></td>
-            <td>{{ run.name }}</td>
+            <td><img ng-click="editName($index)" ng-disabled="editSelected" src="edit_icon.png"></td>
+            <td><input ng-style="{'border-color': run.editColor}" type="text" ng-show="run.edit" ng-model="run.newName" ng-init="run.newName=run.name"><div ng-show="!run.edit">{{ run.name }}</div></td>
             <td>{{ run.count }}</td>
             <td><button ng-click="clearTable(run.run_id)" ng-disabled="busy">Clear</button></td>
           </tr>
