@@ -123,8 +123,8 @@
   <section id="results" ng-hide="runs === null || !runs.length">
     <h2>Results</h2>
     <form>
-      Show <input ng-model="resultsView.limit" type="number"> results. <button ng-click="fillTable(0)" ng-disabled="busy || runs === null || runs.length === 0">Load</button>
-      <button ng-click="export()" ng-disabled="busy || runs === null || runs.length === 0">Save</button>
+      Show <input ng-model="resultsView.limit" type="number"> results. <button ng-click="fillTable(0)" ng-disabled="busy || runs === null || runs.length === 0 || !(runs | enabledFilter).length">Load</button>
+      <button ng-click="export()" ng-disabled="busy || runs === null || runs.length === 0 || !(runs | enabledFilter).length"">Save</button>
     </form>
     <table ng-table="resultsTable" id="resultsTable" ng-if="results !== null">
       <tr>
