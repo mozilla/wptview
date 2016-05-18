@@ -27,8 +27,14 @@
           </tr>
           <tr ng-repeat="run in runs">
             <td><input type="checkbox" ng-model="run.enabled" ng-change="switchRun(run)" ng-disabled="busy"></td>
-            <td><img ng-click="editName($index)" ng-disabled="editSelected" src="edit_icon.png"></td>
-            <td><input ng-style="{'border-color': run.editColor}" type="text" ng-show="run.edit" ng-model="run.newName" ng-init="run.newName=run.name"><div ng-show="!run.edit">{{ run.name }}</div></td>
+            <td><img ng-style="{'cursor': 'pointer'}" ng-click="run.edit = !run.edit" src="edit_icon.svg"></td>
+            <td>
+              <form name="editNameForm" novalidate>
+                <input edit-name type="text" ng-show="run.edit" ng-model="run.newName" value="{{run.name}}">
+                <button ng-click="editNameSubmit($index, editNameForm.$valid)" ng-show="run.edit">Save</button>
+                <div ng-show="!run.edit">{{ run.name }}</div>
+              </form>
+            </td>
             <td>{{ run.count }}</td>
             <td><button ng-click="clearTable(run.run_id)" ng-disabled="busy">Clear</button></td>
           </tr>
