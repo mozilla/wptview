@@ -10,6 +10,28 @@ app.directive('customOnChange', function() {
   };
 });
 
+app.directive('editName', function() {
+  return {
+    require: 'ngModel',
+    link: function(scope, element, attrs, ctrl) {
+      var runNames = scope.runs.map((run) => run.name);
+      var initialName = attrs.value;
+      ctrl.$validators.editName = function(modelValue, viewValue) {
+        var curName = viewValue;
+        if (!(curName === null || curName.match(/^\s*$/) !== null)) {
+          if (runNames.indexOf(curName) === -1 || curName === initialName) {
+            element.css('border-color', 'green');
+            return true;
+          } else {
+            element.css('border-color', 'red');
+            return false;
+          }
+        }
+      };
+    }
+  };
+});
+
 app.filter('arrFilter', function() {
   return function(collection, currentRun) {
     return collection.filter((item) => currentRun !== item.name && currentRun !== "ALL" && item.enabled);
@@ -183,6 +205,10 @@ app.factory('ResultsModel',function() {
     return this.service.run("getRunURLs");
   };
 
+  ResultsModel.prototype.editRunName = function(run_id, newRunName) {
+    return this.service.run("editRunName", [run_id, newRunName]);
+  };
+
   return ResultsModel;
 });
 
@@ -232,6 +258,8 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
         $scope.runs = runs;
         $scope.runs.forEach((run, i) => {
           runIndex[run.run_id] = i;
+          run.edit = false;
+          run.newName = "";
         });
       });
   }
@@ -377,6 +405,19 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
       $scope.results = null;
       $scope.$apply();
     });
+  };
+
+  $scope.editNameSubmit = function(index, isValid) {
+    if (isValid) {
+      resultsModel.editRunName($scope.runs[index].run_id, $scope.runs[index].newName)
+      .then(() => {
+        updateRuns()
+        .then(() => {
+          $scope.runs[index].edit = false;
+          $scope.$apply();
+        });
+      });
+    }
   };
 
   $scope.clearTable = function(run_id) {
