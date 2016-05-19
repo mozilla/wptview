@@ -473,12 +473,17 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     var maxTestId = null;
 
     $scope.busy = true;
-
+    console.log("filltable");
     if (page === "next") {
       var minTestId = $scope.resultsView.maxTestId;
     } else if (page === "prev") {
       var maxTestId = $scope.resultsView.minTestId;
     }
+
+    resultsModel.getResults($scope.filter, $scope.runs, minTestId, maxTestId, Infinity)
+      .then((results) => {
+        console.log("Total="+results.length);
+      });
 
     resultsModel.getResults($scope.filter, $scope.runs, minTestId, maxTestId, $scope.resultsView.limit)
       .then((results) => {
