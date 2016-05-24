@@ -423,14 +423,7 @@ LovefieldService.prototype.selectFilteredResults = function(filter, runs, minTes
     var choice = pathFilter.choice.split(":");
     if (choice[1] === "start") {
       if (pathFilter.path.charAt(0) !== "/") {
-        path_regex = escapeRegExp("/" + pathFilter.path);
-        // We create this extra variable to account for paths not starting with /
-        path_regex_relative = new RegExp("^" + escapeRegExp(pathFilter.path), 'i');
-        if (choice[0] === "include") {
-          pathOrConditions.include.push(tests.test.match(path_regex_relative));
-        } else {
-          pathOrConditions.exclude.push(tests.test.match(path_regex_relative));
-        }
+        path_regex = "\/?" + path_regex;
       }
       path_regex = "^" + path_regex;
     } else if (choice[1] === "end") {
