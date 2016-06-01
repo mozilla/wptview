@@ -336,7 +336,7 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
   function updateWarnings() {
     $scope.$apply(function() {
       $scope.runs[$scope.runs.map((run) => run.name).
-                  indexOf($scope.warnings['runName'])].warnings = 
+                  indexOf($scope.warnings['runName'])].warnings =
                     $scope.warnings['duplicates'];
     });
     console.log($scope.runs[$scope.runs.map((run) => run.name).
