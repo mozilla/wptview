@@ -214,7 +214,7 @@ app.factory('ResultsModel',function() {
 
 app.controller('wptviewController', function($scope, $location, $interval, ResultsModel) {
   $scope.results = null;
-  $scope.warnings = [];
+  $scope.warnings = {};
   $scope.showImport = false;
   $scope.busy = true;
   $scope.runs = null;
@@ -268,7 +268,7 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     $scope.updateProgress(0,12);
     $scope.progressBar.visibility = true;
     return resultsModel.addResultsFromLogs(source, name, type, $scope.updateProgress)
-    .then((duplicates) => {return updateWarnings(duplicates);});
+    .then((duplicates) => {return saveTemporaryWarnings(duplicates, name);});
   }
 
   function getRunURLs() {
@@ -324,10 +324,23 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
   });
 
 
-  function updateWarnings(duplicates) {
+  function saveTemporaryWarnings(duplicates, runName) {
     $scope.$apply(function() {
-      $scope.warnings = duplicates;
+      $scope.warnings = {
+        'runName': runName,
+        'duplicates': duplicates
+      };
     });
+  }
+
+  function updateWarnings() {
+    $scope.$apply(function() {
+      $scope.runs[$scope.runs.map((run) => run.name).
+                  indexOf($scope.warnings['runName'])].warnings = 
+                    $scope.warnings['duplicates'];
+    });
+    console.log($scope.runs[$scope.runs.map((run) => run.name).
+                  indexOf($scope.warnings['runName'])].warnings);
   }
 
   $scope.updateProgress = function updateProgress(current, total) {
@@ -378,6 +391,8 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     addRun(file, $scope.upload.runName, "read")
     .then(updateRuns)
     .then(() => {
+      updateWarnings();
+      console.log("runs warnings");
       $scope.upload.runName = "";
       // Clears target for "Upload File" after import is complete.
       $scope.fileEvent.target.value = null;
@@ -391,6 +406,7 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     addRun($scope.upload.logUrl, $scope.upload.runName, "readURL")
     .then(updateRuns)
     .then(() => {
+      updateWarnings();
       $scope.upload.runName = "";
       $scope.busy = false;
       $scope.$apply();
@@ -535,10 +551,6 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
 
   $scope.deletePath = function() {
     $scope.filter.pathFilter.pop();
-  };
-
-  $scope.warning_message = function() {
-    return $scope.warnings.length + " warnings found.";
   };
 
   $scope.showError = function(runResult, resultTest) {
