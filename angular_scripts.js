@@ -156,6 +156,10 @@ app.factory('ResultsModel',function() {
       });
   };
 
+  ResultsModel.prototype.updateWarnings = function(runName, duplicates) {
+    return this.service.run("updateWarnings", [runName, duplicates]);
+  };
+
   /*
     Load the results of a specified number of tests, ordered by test id, either taking all
     results above a lower limit test id, all results below an upper limit id, or all results
@@ -214,7 +218,6 @@ app.factory('ResultsModel',function() {
 
 app.controller('wptviewController', function($scope, $location, $interval, ResultsModel) {
   $scope.results = null;
-  $scope.warnings = {};
   $scope.showImport = false;
   $scope.busy = true;
   $scope.runs = null;
@@ -260,6 +263,7 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
           runIndex[run.run_id] = i;
           run.edit = false;
           run.newName = "";
+          run.warnings = JSON.parse(run.warnings);
         });
       });
   }
@@ -268,7 +272,7 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     $scope.updateProgress(0,12);
     $scope.progressBar.visibility = true;
     return resultsModel.addResultsFromLogs(source, name, type, $scope.updateProgress)
-    .then((duplicates) => {return saveTemporaryWarnings(duplicates, name);});
+    .then((duplicates) => {return saveWarnings(name, duplicates);});
   }
 
   function getRunURLs() {
@@ -323,24 +327,9 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     $scope.$apply();
   });
 
-
-  function saveTemporaryWarnings(duplicates, runName) {
-    $scope.$apply(function() {
-      $scope.warnings = {
-        'runName': runName,
-        'duplicates': duplicates
-      };
-    });
-  }
-
-  function updateWarnings() {
-    $scope.$apply(function() {
-      $scope.runs[$scope.runs.map((run) => run.name).
-                  indexOf($scope.warnings['runName'])].warnings =
-                    $scope.warnings['duplicates'];
-    });
-    console.log($scope.runs[$scope.runs.map((run) => run.name).
-                  indexOf($scope.warnings['runName'])].warnings);
+  function saveWarnings(runName, duplicates) {
+    return resultsModel.updateWarnings(runName, duplicates)
+      .then(() => {console.log("Updated warnings.");});
   }
 
   $scope.updateProgress = function updateProgress(current, total) {
@@ -391,8 +380,6 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     addRun(file, $scope.upload.runName, "read")
     .then(updateRuns)
     .then(() => {
-      updateWarnings();
-      console.log("runs warnings");
       $scope.upload.runName = "";
       // Clears target for "Upload File" after import is complete.
       $scope.fileEvent.target.value = null;
@@ -406,7 +393,6 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     addRun($scope.upload.logUrl, $scope.upload.runName, "readURL")
     .then(updateRuns)
     .then(() => {
-      updateWarnings();
       $scope.upload.runName = "";
       $scope.busy = false;
       $scope.$apply();

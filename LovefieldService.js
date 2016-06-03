@@ -58,6 +58,7 @@ LovefieldService.prototype.buildSchema_ = function() {
       addColumn('name', lf.Type.STRING).
       addColumn('enabled', lf.Type.BOOLEAN).
       addColumn('url', lf.Type.STRING).
+      addColumn('warnings', lf.Type.STRING).
       addNullable(['url']).
       addPrimaryKey(['run_id'],true);
   schemaBuilder.createTable('tests').
@@ -114,7 +115,8 @@ LovefieldService.prototype.insertTestRuns = function(runType, runName, testRuns)
   testRunRows.push(test_runs.createRow({
     'name': runName,
     'enabled': true,
-    'url': runType.url
+    'url': runType.url,
+    'warnings': ""
   }));
   var q1 = this.db_.
       insert().
@@ -300,6 +302,15 @@ LovefieldService.prototype.insertSubtestResults = function(testLogsRaw, subtests
       insert().
       into(test_results).
       values(subtestResultsRows);
+  return q1.exec();
+};
+
+LovefieldService.prototype.updateWarnings = function(runName, duplicates) {
+  var test_runs = this.test_runs;
+  var q1 = this.db_.
+      update(test_runs).
+      set(test_runs.warnings, JSON.stringify(duplicates)).
+      where(lf.op.and(test_runs.name.eq(runName)));
   return q1.exec();
 };
 
