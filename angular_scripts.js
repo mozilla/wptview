@@ -228,6 +228,11 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
   $scope.busy = true;
   $scope.runs = null;
   $scope.upload = {};
+  $scope.displayWarnings = {
+    runName: "",
+    visible: false,
+    warnings: []
+  };
   $scope.displayError = {
     test: "",
     subtest: "",
@@ -278,7 +283,10 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     $scope.updateProgress(0,12);
     $scope.progressBar.visibility = true;
     return resultsModel.addResultsFromLogs(source, name, type, $scope.updateProgress)
-    .then((duplicates) => {return saveWarnings(name, duplicates);});
+    .then((duplicates) => {
+      return resultsModel.updateWarnings(name, duplicates)
+      .then(() => {console.log("Updated warnings.");});
+    });
   }
 
   function getRunURLs() {
@@ -332,11 +340,6 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     $scope.busy = false;
     $scope.$apply();
   });
-
-  function saveWarnings(runName, duplicates) {
-    return resultsModel.updateWarnings(runName, duplicates)
-      .then(() => {console.log("Updated warnings.");});
-  }
 
   $scope.updateProgress = function updateProgress(current, total) {
     $scope.progressValue = Math.floor(current*100/total);
@@ -543,6 +546,12 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
 
   $scope.deletePath = function() {
     $scope.filter.pathFilter.pop();
+  };
+
+  $scope.showWarnings = function(run) {
+    $scope.displayWarnings.runName = run.name;
+    $scope.displayWarnings.warnings = angular.copy(run.warnings);
+    $scope.displayWarnings.visible = true;
   };
 
   $scope.showError = function(runResult, resultTest) {

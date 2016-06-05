@@ -38,7 +38,7 @@
             </td>
             <td>
               <div class="tooltip" ng-show="run.warnings.length">
-                <img ng-style="{'cursor': 'pointer'}" src="warning.svg">
+                <img ng-style="{'cursor': 'pointer'}" ng-click="showWarnings(run)" src="warning.svg">
                 <span class="tooltiptext">{{ run.warnings.length }} warnings</span>
               </span>
             </td>
@@ -162,6 +162,13 @@
     <button ng-if="results !== null" ng-click="fillTable('next')" ng-disabled="busy || runs === null || runs.length === 0 || resultsView.lastPage">Next</button>
   </section>
   </div>
+  <div ng-if="displayWarnings.visible" class="detailsPanel">
+    <h2> Warnings in {{displayWarnings.runName}} </h2>
+    <ol style="margin-left: 3em; display: list-item; text-indent: -3em;" ng-repeat="warning in displayWarnings.warnings">
+      <div><b>Test</b> : {{ warning.test }}</div>
+      <div><b>Subtest</b> : {{ warning.subtest }}</div>
+      <br />
+  </ol>
   <div ng-if="displayError.visible" class="detailsPanel">
     <div style="display: inline-block; max-width: 50%">
       <div><b>Test</b> : {{ displayError.test }}</div>
