@@ -22,6 +22,7 @@
             <th></th>
             <th></th>
             <th>Run Name</th>
+            <th ng-show="runs | warningFilter"></th>
             <th>Results Loaded</th>
             <th></th>
           </tr>
@@ -33,10 +34,13 @@
                 <input edit-name type="text" ng-show="run.edit" ng-model="run.newName" value="{{run.name}}">
                 <button ng-click="editNameSubmit($index, editNameForm.$valid)" ng-show="run.edit">Save</button>
                 <span ng-show="!run.edit">{{ run.name }}</span>
-                <span class="tooltip" ng-show="run.warnings.length">!
-                  <span class="tooltiptext">{{ run.warnings.length }} warnings</span>
-                </span>
               </form>
+            </td>
+            <td>
+              <div class="tooltip" ng-show="run.warnings.length">
+                <img ng-style="{'cursor': 'pointer'}" src="warning.svg">
+                <span class="tooltiptext">{{ run.warnings.length }} warnings</span>
+              </span>
             </td>
             <td>{{ run.count }}</td>
             <td><button ng-click="clearTable(run.run_id)" ng-disabled="busy">Clear</button></td>
