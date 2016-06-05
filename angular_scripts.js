@@ -44,6 +44,12 @@ app.filter('enabledFilter', function() {
   };
 });
 
+app.filter('warningFilter', function() {
+  return function(collection) {
+    return collection.some((item) => item.warnings.length);
+  }
+})
+
 function WorkerService(workerScript) {
   this.msg_id = 0;
   this.resolvers = {};
