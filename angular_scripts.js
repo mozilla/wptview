@@ -44,12 +44,6 @@ app.filter('enabledFilter', function() {
   };
 });
 
-app.filter('warningFilter', function() {
-  return function(collection) {
-    return collection.some((item) => item.warnings.length);
-  };
-});
-
 function WorkerService(workerScript) {
   this.msg_id = 0;
   this.resolvers = {};
@@ -284,8 +278,7 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     $scope.progressBar.visibility = true;
     return resultsModel.addResultsFromLogs(source, name, type, $scope.updateProgress)
     .then((duplicates) => {
-      return resultsModel.updateWarnings(name, duplicates)
-      .then(() => {console.log("Updated warnings.");});
+      return resultsModel.updateWarnings(name, duplicates);
     });
   }
 
@@ -550,7 +543,7 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
 
   $scope.showWarnings = function(run) {
     $scope.displayWarnings.runName = run.name;
-    $scope.displayWarnings.warnings = angular.copy(run.warnings);
+    $scope.displayWarnings.warnings = run.warnings;
     $scope.displayWarnings.visible = true;
   };
 

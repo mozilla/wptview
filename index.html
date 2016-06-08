@@ -22,8 +22,8 @@
             <th></th>
             <th></th>
             <th>Run Name</th>
-            <th ng-show="runs | warningFilter"></th>
             <th>Results Loaded</th>
+            <th></th>
             <th></th>
           </tr>
           <tr ng-repeat="run in runs">
@@ -36,14 +36,11 @@
                 <span ng-show="!run.edit">{{ run.name }}</span>
               </form>
             </td>
-            <td>
-              <div class="tooltip" ng-show="run.warnings.length">
-                <img ng-style="{'cursor': 'pointer'}" ng-click="showWarnings(run)" src="warning.svg">
-                <span class="tooltiptext">{{ run.warnings.length }} warnings</span>
-              </span>
-            </td>
             <td>{{ run.count }}</td>
             <td><button ng-click="clearTable(run.run_id)" ng-disabled="busy">Clear</button></td>
+            <td>
+              <img title="{{ run.warnings.length }} warnings" src="warning.svg" ng-style="{'cursor': 'pointer'}" ng-click="showWarnings(run)">
+            </td>
           </tr>
           <tfoot>
             <tr>
@@ -163,12 +160,14 @@
   </section>
   </div>
   <div ng-if="displayWarnings.visible" class="detailsPanel">
-    <h2> Warnings in {{displayWarnings.runName}} </h2>
-    <ol style="margin-left: 3em; display: list-item; text-indent: -3em;" ng-repeat="warning in displayWarnings.warnings">
+    <h2> Duplicate tests in {{displayWarnings.runName}} </h2>
+    <ol>
+    <li style="margin-top: 0.8em;" ng-repeat="warning in displayWarnings.warnings">
       <div><b>Test</b> : {{ warning.test }}</div>
       <div><b>Subtest</b> : {{ warning.subtest }}</div>
-      <br />
-  </ol>
+    </li>
+    </ol>
+  </div>
   <div ng-if="displayError.visible" class="detailsPanel">
     <div style="display: inline-block; max-width: 50%">
       <div><b>Test</b> : {{ displayError.test }}</div>
