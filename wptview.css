@@ -48,6 +48,10 @@ h1 {
     flex: none;
 }
 
+.detailsPanel > li {
+    margin-top: 0.8em;
+}
+
 #runsData {
     display: flex;
 }

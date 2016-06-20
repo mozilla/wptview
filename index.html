@@ -162,7 +162,7 @@
   <div ng-if="displayWarnings.visible" class="detailsPanel">
     <h2> Duplicate tests in {{displayWarnings.runName}} </h2>
     <ol>
-    <li style="margin-top: 0.8em;" ng-repeat="warning in displayWarnings.warnings">
+    <li ng-repeat="warning in displayWarnings.warnings">
       <div><b>Test</b> : {{ warning.test }}</div>
       <div><b>Subtest</b> : {{ warning.subtest }}</div>
     </li>
