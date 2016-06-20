@@ -48,7 +48,7 @@ h1 {
     flex: none;
 }
 
-.detailsPanel > li {
+.detailsPanel li {
     margin-top: 0.8em;
 }
 
