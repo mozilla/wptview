@@ -15,7 +15,7 @@
     <p ng-if="runs === null">
       Loading...
     </p>
-    <div id="runsData"  ng-if="runs !== null">
+    <div id="runsData" ng-if="runs !== null">
       <div>
         <table id="runsTable">
           <tr>
@@ -23,6 +23,7 @@
             <th></th>
             <th>Run Name</th>
             <th>Results Loaded</th>
+            <th></th>
             <th></th>
           </tr>
           <tr ng-repeat="run in runs">
@@ -32,11 +33,14 @@
               <form name="editNameForm" novalidate>
                 <input edit-name type="text" ng-show="run.edit" ng-model="run.newName" value="{{run.name}}">
                 <button ng-click="editNameSubmit($index, editNameForm.$valid)" ng-show="run.edit">Save</button>
-                <div ng-show="!run.edit">{{ run.name }}</div>
+                <span ng-show="!run.edit">{{ run.name }}</span>
               </form>
             </td>
             <td>{{ run.count }}</td>
             <td><button ng-click="clearTable(run.run_id)" ng-disabled="busy">Clear</button></td>
+            <td>
+              <img title="{{ run.warnings.length }} warnings" src="warning.svg" ng-style="{'cursor': 'pointer'}" ng-click="showWarnings(run)">
+            </td>
           </tr>
           <tfoot>
             <tr>
@@ -132,7 +136,7 @@
     <h2>Results</h2>
     <form>
       Show <input ng-model="resultsView.limit" type="number"> results. <button ng-click="fillTable(0)" ng-disabled="busy || runs === null || runs.length === 0 || !(runs | enabledFilter).length">Load</button>
-      <button ng-click="export()" ng-disabled="busy || runs === null || runs.length === 0 || !(runs | enabledFilter).length"">Save</button>
+      <button ng-click="export()" ng-disabled="busy || runs === null || runs.length === 0 || !(runs | enabledFilter).length">Save</button>
     </form>
     <table ng-table="resultsTable" id="resultsTable" ng-if="results !== null">
       <tr>
@@ -154,9 +158,15 @@
     <button ng-if="results !== null" ng-click="fillTable('prev')" ng-disabled="busy || runs === null || runs.length === 0 || resultsView.firstPage">Previous</button>
     <button ng-if="results !== null" ng-click="fillTable('next')" ng-disabled="busy || runs === null || runs.length === 0 || resultsView.lastPage">Next</button>
   </section>
-  <p>
-    {{ warning_message() }}
-  </p>
+  </div>
+  <div ng-if="displayWarnings.visible" class="detailsPanel">
+    <h2> Duplicate tests in {{displayWarnings.runName}} </h2>
+    <ol>
+    <li ng-repeat="warning in displayWarnings.warnings">
+      <div><b>Test</b> : {{ warning.test }}</div>
+      <div><b>Subtest</b> : {{ warning.subtest }}</div>
+    </li>
+    </ol>
   </div>
   <div ng-if="displayError.visible" class="detailsPanel">
     <div style="display: inline-block; max-width: 50%">

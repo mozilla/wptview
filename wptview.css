@@ -43,8 +43,13 @@ h1 {
     background-color: #FFFFFF;
     border-top: solid black;
     padding: 1%;
+    overflow: auto;
 
     flex: none;
+}
+
+.detailsPanel li {
+    margin-top: 0.8em;
 }
 
 #runsData {

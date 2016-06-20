@@ -156,6 +156,10 @@ app.factory('ResultsModel',function() {
       });
   };
 
+  ResultsModel.prototype.updateWarnings = function(runName, duplicates) {
+    return this.service.run("updateWarnings", [runName, duplicates]);
+  };
+
   /*
     Load the results of a specified number of tests, ordered by test id, either taking all
     results above a lower limit test id, all results below an upper limit id, or all results
@@ -214,11 +218,15 @@ app.factory('ResultsModel',function() {
 
 app.controller('wptviewController', function($scope, $location, $interval, ResultsModel) {
   $scope.results = null;
-  $scope.warnings = [];
   $scope.showImport = false;
   $scope.busy = true;
   $scope.runs = null;
   $scope.upload = {};
+  $scope.displayWarnings = {
+    runName: "",
+    visible: false,
+    warnings: []
+  };
   $scope.displayError = {
     test: "",
     subtest: "",
@@ -260,6 +268,7 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
           runIndex[run.run_id] = i;
           run.edit = false;
           run.newName = "";
+          run.warnings = JSON.parse(run.warnings);
         });
       });
   }
@@ -268,7 +277,9 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     $scope.updateProgress(0,12);
     $scope.progressBar.visibility = true;
     return resultsModel.addResultsFromLogs(source, name, type, $scope.updateProgress)
-    .then((duplicates) => {return updateWarnings(duplicates);});
+    .then((duplicates) => {
+      return resultsModel.updateWarnings(name, duplicates);
+    });
   }
 
   function getRunURLs() {
@@ -322,13 +333,6 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     $scope.busy = false;
     $scope.$apply();
   });
-
-
-  function updateWarnings(duplicates) {
-    $scope.$apply(function() {
-      $scope.warnings = duplicates;
-    });
-  }
 
   $scope.updateProgress = function updateProgress(current, total) {
     $scope.progressValue = Math.floor(current*100/total);
@@ -537,8 +541,10 @@ app.controller('wptviewController', function($scope, $location, $interval, Resul
     $scope.filter.pathFilter.pop();
   };
 
-  $scope.warning_message = function() {
-    return $scope.warnings.length + " warnings found.";
+  $scope.showWarnings = function(run) {
+    $scope.displayWarnings.runName = run.name;
+    $scope.displayWarnings.warnings = run.warnings;
+    $scope.displayWarnings.visible = true;
   };
 
   $scope.showError = function(runResult, resultTest) {
